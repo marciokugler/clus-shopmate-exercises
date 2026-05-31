@@ -2,17 +2,29 @@
 
 ## Goal
 
-Deploy or validate your namespace-scoped OpenTelemetry Collector.
+Validate the namespace-scoped Splunk OpenTelemetry Collector gateway for your student environment.
 
-Your collector receives telemetry from the ShopMate Sports website workload, adds your student identity, scrapes selected GPU/NIM metrics, and exports to Splunk Observability Cloud.
+The gateway receives OTLP telemetry from the ShopMate Sports website workload and exports it to Splunk Observability Cloud. Student identity is carried by the application through `OTEL_RESOURCE_ATTRIBUTES`, so the collector can stay simple and does not need cluster-wide Kubernetes permissions.
 
 The Kubernetes service may be named `shopmate-ai`. Treat that as the technical service name for the ShopMate Sports website.
 
-## Why This Matters
+## Why Gateway Mode
 
-In production, telemetry quality depends on the collector path. If identity, batching, receivers, or exporters are wrong, traces and metrics become hard to trust.
+The lab uses one collector gateway per student namespace. This is intentionally different from a normal full-cluster Kubernetes collector install.
 
-In this lab, your collector is intentionally namespace-scoped. It gives you a real collector exercise without requiring cluster-wide permissions.
+| Mode | Kubernetes shape | What it is good for | Why we use or avoid it here |
+| --- | --- | --- | --- |
+| Agent or node mode | DaemonSet on every node | Node, host, kubelet, container log, and per-node enrichment | Useful for platform telemetry, but too broad for student namespaces and can duplicate data if every student deploys it |
+| Cluster receiver | Deployment or StatefulSet | Cluster metrics, Kubernetes objects, and events | Useful once per cluster, but not per student because it needs broader permissions and would duplicate shared cluster data |
+| Gateway mode | Deployment plus ClusterIP service | Receives app OTLP telemetry, batches it, and exports to Splunk | Best fit for this lab because each namespace gets an isolated endpoint without node or cluster-wide collection |
+
+In this workshop the gateway service name is `student-collector`, so ShopMate sends telemetry to:
+
+```text
+http://student-collector:4318
+```
+
+The full node/agent collector belongs in a shared platform or instructor namespace if the lab needs cluster-wide Kubernetes, node, or log telemetry. Student namespaces should not each run their own DaemonSet collector.
 
 ## Step 1: Confirm Your Namespace
 
@@ -41,214 +53,145 @@ If `kubectl auth can-i --list` does not show normal namespaced permissions, stop
 ## Step 2: Confirm The Splunk Token Secret
 
 ```bash
-kubectl get secret "$SPLUNK_ACCESS_TOKEN_SECRET" -n "$STUDENT_NAMESPACE"
+kubectl get secret splunk-observability-token -n "$STUDENT_NAMESPACE"
 ```
 
 Expected result:
 
 - the secret exists
+- the secret has the expected Splunk token key
+- you do not print the token value
 
-If it is missing, ask for the lab token Secret to be provisioned. Do not paste an ingest token into your terminal history unless the lab explicitly tells you to.
-
-Debug if the secret exists but the collector cannot use it:
+Debug if the secret exists but the collector cannot export:
 
 ```bash
-kubectl describe secret "$SPLUNK_ACCESS_TOKEN_SECRET" -n "$STUDENT_NAMESPACE"
+kubectl describe secret splunk-observability-token -n "$STUDENT_NAMESPACE"
 kubectl get events -n "$STUDENT_NAMESPACE" --sort-by=.lastTimestamp
 ```
 
-You should only verify that the expected key exists. Do not print the token value.
+If collector logs show `401 "Unauthorized"`, the Kubernetes deployment is running but Splunk rejected the credential. Check that the token belongs to the same Splunk organization and realm used by the Helm values. Do not paste the token into chat, docs, or shell history.
 
-## Step 3: Review Collector Identity
+## Step 3: Review The Lab Helm Values
 
-Your collector should attach these resource attributes:
+We use the official Splunk OpenTelemetry Collector Helm chart and pin the chart version for repeatability.
+
+```bash
+helm repo add splunk-otel-collector-chart https://signalfx.github.io/splunk-otel-collector-chart
+helm repo update splunk-otel-collector-chart
+helm search repo splunk-otel-collector-chart/splunk-otel-collector --versions | head
+```
+
+Current lab pin, selected for the May 31, 2026 lab build:
+
+```text
+splunk-otel-collector-chart/splunk-otel-collector 0.153.0
+```
+
+The student values files are in the repo:
+
+```text
+infra/helm/student-collector-values-student-01.yaml
+infra/helm/student-collector-values-student-02.yaml
+```
+
+The important settings are:
 
 ```yaml
-resource/student:
-  attributes:
-    - key: student.id
-      value: ${env:STUDENT_ID}
-      action: upsert
-    - key: team.name
-      value: ${env:TEAM_NAME}
-      action: upsert
-    - key: department.name
-      value: ${env:DEPARTMENT_NAME}
-      action: upsert
-    - key: department.cost_center
-      value: ${env:DEPARTMENT_COST_CENTER}
-      action: upsert
-    - key: chargeback.account
-      value: ${env:CHARGEBACK_ACCOUNT}
-      action: upsert
-    - key: deployment.environment
-      value: ${env:STUDENT_ID}
-      action: upsert
-    - key: k8s.namespace.name
-      value: ${env:STUDENT_NAMESPACE}
-      action: upsert
-    - key: k8s.cluster.name
-      value: ${env:LOGICAL_CLUSTER_NAME}
-      action: upsert
+fullnameOverride: student-collector
+clusterName: clus-ltrobs-2001-student-01
+
+agent:
+  enabled: false
+
+clusterReceiver:
+  enabled: false
+
+gateway:
+  enabled: true
+  replicaCount: 1
+  config:
+    processors:
+      k8s_attributes: null
+    service:
+      pipelines:
+        traces:
+          processors: [memory_limiter, batch, resource/add_cluster_name]
+
+rbac:
+  create: false
+
+serviceAccount:
+  create: false
+  name: student
+
+secret:
+  create: false
+  name: splunk-observability-token
+  validateSecret: false
+
+splunkObservability:
+  realm: us0
 ```
 
-These attributes let you filter your data inside a shared Splunk tenant.
+Why these settings matter:
 
-| Attribute | Why it matters | Splunk UI mapping |
-| --- | --- | --- |
-| `student.id` | Unique participant identity | Filter traces and metrics to your work |
-| `team.name` | Group identity | Compare team-level behavior |
-| `department.name` | Business owner | Tokenomics and chargeback grouping |
-| `department.cost_center` | Financial owner | Cost center grouping |
-| `chargeback.account` | Billing label | Verify spend attribution |
-| `deployment.environment` | Logical lab environment | APM environment filter and related content |
-| `k8s.cluster.name` | Logical student cluster name | Separates duplicated shared GPU/NIM scrapes |
-| `k8s.namespace.name` | Kubernetes namespace | Correlates app telemetry with shared Kubernetes metrics |
+- `agent.enabled=false` prevents a per-student DaemonSet.
+- `clusterReceiver.enabled=false` prevents duplicated cluster-level metrics and events.
+- `gateway.enabled=true` creates the namespace-local OTLP endpoint.
+- `rbac.create=false` and `serviceAccount.name=student` keep the collector inside student namespace permissions.
+- `secret.create=false` tells Helm to use the existing `splunk-observability-token` Secret.
+- `k8s_attributes: null` removes a default processor that expects broader Kubernetes lookup permissions. ShopMate already sends `student.id`, `k8s.namespace.name`, `deployment.environment`, and cost labels as resource attributes.
 
-Reference:
+## Step 4: Deploy Or Redeploy The Gateway
 
-- Splunk Collector troubleshooting covers missing data, receiver pipeline issues, exporter failures, and credential problems: [Troubleshoot the Splunk OpenTelemetry Collector](https://help.splunk.com/en?resourceId=gdi_opentelemetry_splunk-collector-troubleshooting).
-- OpenTelemetry Collector troubleshooting describes internal telemetry, zPages, and Kubernetes debugging patterns: [OpenTelemetry Collector troubleshooting](https://opentelemetry.io/docs/collector/troubleshooting/).
-- Splunk publishes the Kubernetes Helm chart and collector source on GitHub: [Splunk OpenTelemetry Collector Helm chart](https://github.com/signalfx/splunk-otel-collector-chart) and [Splunk OpenTelemetry Collector](https://github.com/signalfx/splunk-otel-collector).
-
-## Step 4: Update The Collector Config File
-
-Open the collector config file provided by the lab. It is usually one of these:
-
-- `student-collector-values.yaml` if you deploy with Helm
-- `student-collector.yaml` if you deploy a rendered manifest
-
-Make sure the config has the complete path from app to Splunk:
-
-| Config section | Required outcome |
-| --- | --- |
-| `receivers.otlp` | Listens for app telemetry on `4317` and `4318` |
-| `processors.resource/student` | Adds your student, namespace, department, environment, and chargeback attributes |
-| `exporters.signalfx` | Uses the lab Splunk realm and access token |
-| `service.pipelines.traces` | Receives app traces, adds attributes, batches, and exports |
-| `service.pipelines.metrics` | Receives app metrics, adds attributes, batches, and exports |
-
-Use this minimal shape when checking your file:
-
-```yaml
-receivers:
-  otlp:
-    protocols:
-      grpc:
-        endpoint: 0.0.0.0:4317
-      http:
-        endpoint: 0.0.0.0:4318
-
-processors:
-  resource/student:
-    attributes:
-      - key: student.id
-        value: ${env:STUDENT_ID}
-        action: upsert
-      - key: team.name
-        value: ${env:TEAM_NAME}
-        action: upsert
-      - key: department.name
-        value: ${env:DEPARTMENT_NAME}
-        action: upsert
-      - key: department.cost_center
-        value: ${env:DEPARTMENT_COST_CENTER}
-        action: upsert
-      - key: chargeback.account
-        value: ${env:CHARGEBACK_ACCOUNT}
-        action: upsert
-      - key: deployment.environment
-        value: ${env:STUDENT_ID}
-        action: upsert
-      - key: k8s.namespace.name
-        value: ${env:STUDENT_NAMESPACE}
-        action: upsert
-      - key: k8s.cluster.name
-        value: ${env:LOGICAL_CLUSTER_NAME}
-        action: upsert
-  batch: {}
-
-exporters:
-  signalfx:
-    realm: ${env:SPLUNK_REALM}
-    access_token: ${env:SPLUNK_ACCESS_TOKEN}
-
-service:
-  pipelines:
-    traces:
-      receivers: [otlp]
-      processors: [resource/student, batch]
-      exporters: [signalfx]
-    metrics:
-      receivers: [otlp]
-      processors: [resource/student, batch]
-      exporters: [signalfx]
-```
-
-If your lab file already includes `memory_limiter`, health checks, or additional Splunk chart settings, keep them. The point of this step is to verify that the receiver, resource attributes, exporter, and pipelines are connected.
-
-The collector pod must receive the non-secret identity values as container environment variables. The Splunk access token should come from the Kubernetes Secret named by `SPLUNK_ACCESS_TOKEN_SECRET`, not from your shell history.
-
-## Step 5: Deploy Or Redeploy The Collector
-
-If the lab provides a Helm values file:
+Instructor command for `student-01`:
 
 ```bash
-helm upgrade --install student-collector "$COLLECTOR_CHART" \
-  --namespace "$STUDENT_NAMESPACE" \
-  --values student-collector-values.yaml
+helm upgrade --install student-collector splunk-otel-collector-chart/splunk-otel-collector \
+  --version 0.153.0 \
+  --namespace student-01 \
+  --values infra/helm/student-collector-values-student-01.yaml
 ```
 
-If the lab provides a rendered manifest:
+Instructor command for `student-02`:
 
 ```bash
-kubectl apply -n "$STUDENT_NAMESPACE" -f student-collector.yaml
+helm upgrade --install student-collector splunk-otel-collector-chart/splunk-otel-collector \
+  --version 0.153.0 \
+  --namespace student-02 \
+  --values infra/helm/student-collector-values-student-02.yaml
 ```
 
-If your lab values or manifest did not already inject the student identity environment variables into the collector pod, set the non-secret values on the deployment:
-
-```bash
-kubectl set env deploy/student-collector -n "$STUDENT_NAMESPACE" \
-  STUDENT_ID="$STUDENT_ID" \
-  STUDENT_NAMESPACE="$STUDENT_NAMESPACE" \
-  TEAM_NAME="$TEAM_NAME" \
-  DEPARTMENT_NAME="$DEPARTMENT_NAME" \
-  DEPARTMENT_COST_CENTER="$DEPARTMENT_COST_CENTER" \
-  CHARGEBACK_ACCOUNT="$CHARGEBACK_ACCOUNT" \
-  SPLUNK_REALM="$SPLUNK_REALM" \
-  LOGICAL_CLUSTER_NAME="$LOGICAL_CLUSTER_NAME"
-kubectl rollout status deploy/student-collector -n "$STUDENT_NAMESPACE"
-```
-
-Reset this step:
+Reset only your namespace resources if you need to reinstall:
 
 ```bash
 helm uninstall student-collector -n "$STUDENT_NAMESPACE"
 kubectl delete -n "$STUDENT_NAMESPACE" deploy/student-collector svc/student-collector configmap/student-collector --ignore-not-found
 ```
 
-Then rerun the Helm install or `kubectl apply` command. Use reset only for resources in your own namespace.
+Then rerun the matching Helm command.
 
-## Step 6: Validate Collector Health
+## Step 5: Validate Kubernetes Health
 
 ```bash
-kubectl get pods -n "$STUDENT_NAMESPACE" -l app.kubernetes.io/name=student-collector
-kubectl get svc -n "$STUDENT_NAMESPACE" student-collector
+helm list -n "$STUDENT_NAMESPACE"
+kubectl get deploy,svc,pods -n "$STUDENT_NAMESPACE" -l app.kubernetes.io/name=splunk-otel-collector
+kubectl rollout status deploy/student-collector -n "$STUDENT_NAMESPACE"
 kubectl logs -n "$STUDENT_NAMESPACE" deploy/student-collector --tail=100
 ```
 
 Look for:
 
-- OTLP HTTP receiver on `4318`
-- OTLP gRPC receiver on `4317`
-- Splunk exporter initialized
-- no authentication errors
-- no repeated scrape failures
+- Helm release status is `deployed`
+- `deployment/student-collector` is `1/1`
+- service `student-collector` exposes OTLP HTTP `4318` and OTLP gRPC `4317`
+- collector logs say the service is ready
+- no repeated `401 "Unauthorized"` exporter errors
 
 More inspection:
 
 ```bash
-kubectl describe pod -n "$STUDENT_NAMESPACE" -l app.kubernetes.io/name=student-collector
+kubectl describe pod -n "$STUDENT_NAMESPACE" -l app.kubernetes.io/name=splunk-otel-collector
 kubectl logs -n "$STUDENT_NAMESPACE" deploy/student-collector --previous --tail=100
 kubectl get events -n "$STUDENT_NAMESPACE" --sort-by=.lastTimestamp
 ```
@@ -260,28 +203,72 @@ Common patterns:
 | `CrashLoopBackOff` | `kubectl logs --previous` for bad YAML, bad component names, or missing environment variables |
 | `ImagePullBackOff` | image name, registry access, and image pull secret |
 | `CreateContainerConfigError` | missing Secret or ConfigMap |
-| no export to Splunk | Splunk realm, token Secret, exporter logs, and outbound network access |
+| `401 "Unauthorized"` | Splunk realm, token type, token org, and Secret key |
+| no app telemetry | ShopMate `OTEL_EXPORTER_OTLP_ENDPOINT`, collector service port `4318`, and app logs |
+
+## Step 6: Generate App Telemetry
+
+Confirm ShopMate is pointed at the gateway:
+
+```bash
+kubectl get deploy shopmate-ai -n "$STUDENT_NAMESPACE" \
+  -o jsonpath='{range .spec.template.spec.containers[0].env[*]}{.name}={.value}{"\n"}{end}' \
+  | grep OTEL
+```
+
+Expected values include:
+
+```text
+OTEL_SERVICE_NAME=shopmate-ai
+OTEL_EXPORTER_OTLP_ENDPOINT=http://student-collector:4318
+OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+OTEL_RESOURCE_ATTRIBUTES=student.id=...
+```
+
+Send a test request:
+
+```bash
+kubectl run shopmate-chat -n "$STUDENT_NAMESPACE" --rm -i --restart=Never \
+  --image=curlimages/curl:8.10.1 -- \
+  curl -fsS http://shopmate-ai:8080/api/chat \
+    -H 'Content-Type: application/json' \
+    -d '{"message":"Recommend a trail shoe and mention the price."}'
+```
+
+Then check the collector logs again:
+
+```bash
+kubectl logs -n "$STUDENT_NAMESPACE" deploy/student-collector --tail=100
+```
 
 ## Step 7: Find The Collector In Splunk
 
 In Splunk Observability Cloud:
 
-1. Open metrics or APM search.
-2. Filter by `deployment.environment=<your student id>`.
-3. Filter by `k8s.cluster.name=<your logical cluster name>`.
-4. Confirm collector telemetry exists.
+1. Open APM or metrics search.
+2. Filter by `service.name=shopmate-ai`.
+3. Filter by `deployment.environment=<your student id>`.
+4. Filter by `k8s.cluster.name=<your logical cluster name>`.
+5. Confirm ShopMate traces and generated metrics appear.
 
 !!! success "Checkpoint"
-    Your collector pod is running, has a service, and can export telemetry tagged with your student identity.
+    Your gateway collector pod is running, has a service, receives ShopMate telemetry, and can export data tagged with your student identity.
 
 ## Knowledge Check
 
-??? question "Why should your collector add `student.id` and `department.name`?"
-    Because all students share the same Splunk environment. These attributes make filtering, dashboard grouping, and chargeback possible.
+??? question "Why are we using gateway mode instead of a node collector?"
+    Gateway mode gives each student namespace a stable OTLP endpoint without requiring DaemonSet, kubelet, host filesystem, or cluster-wide permissions.
 
-??? question "Why is your collector not a DaemonSet?"
-    You only need namespace app telemetry and selected GPU/NIM scrapes. A DaemonSet would duplicate cluster-wide collection and require broader permissions.
+??? question "Where does student identity come from?"
+    ShopMate sends identity through `OTEL_RESOURCE_ATTRIBUTES`. The gateway keeps the telemetry path simple and exports those resource attributes to Splunk.
 
-## Troubleshooting
+??? question "What does `401 Unauthorized` in collector logs mean?"
+    The collector reached Splunk, but Splunk rejected the credential. Check token type, token organization, token realm, and whether the Secret contains the expected key.
 
-If the collector does not start or export, use the [troubleshooting appendix](appendix-troubleshooting.md#collector-issues).
+## Sources
+
+- Splunk documents Helm-based Kubernetes collector configuration, including EKS options and using a gateway endpoint for instrumented applications: [Configure with Helm](https://help.splunk.com/en?resourceId=gdi_opentelemetry_collector-kubernetes_kubernetes-config).
+- Splunk documents agent, cluster receiver, and gateway customization through `agent.config`, `clusterReceiver.config`, and `gateway.config`: [Advanced configuration](https://help.splunk.com/en/splunk-observability-cloud/manage-data/splunk-distribution-of-the-opentelemetry-collector/get-started-with-the-splunk-distribution-of-the-opentelemetry-collector/collector-for-kubernetes/advanced-configuration).
+- Splunk explains collector deployment modes and gateway forwarding behavior: [Deployment modes](https://help.splunk.com/en?resourceId=gdi_opentelemetry_deployment-modes).
+- The lab uses the official Splunk Helm chart and release stream: [Splunk OpenTelemetry Collector Helm chart](https://github.com/signalfx/splunk-otel-collector-chart) and [chart releases](https://github.com/signalfx/splunk-otel-collector-chart/releases).
+- OpenTelemetry documents collector troubleshooting patterns used when checking pipelines and collector health: [OpenTelemetry Collector troubleshooting](https://opentelemetry.io/docs/collector/troubleshooting/).

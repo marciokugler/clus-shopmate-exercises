@@ -1,0 +1,41 @@
+fullnameOverride: student-collector
+clusterName: clus-ltrobs-2001-student-02
+
+agent:
+  enabled: false
+
+clusterReceiver:
+  enabled: false
+
+gateway:
+  enabled: true
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 512Mi
+  config:
+    processors:
+      k8s_attributes: null
+    service:
+      pipelines:
+        traces:
+          processors: [memory_limiter, batch, resource/add_cluster_name]
+
+rbac:
+  create: false
+
+serviceAccount:
+  create: false
+  name: student
+
+secret:
+  create: false
+  name: splunk-observability-token
+  validateSecret: false
+
+splunkObservability:
+  realm: us0
