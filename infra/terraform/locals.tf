@@ -4,6 +4,7 @@ locals {
   required_tags = {
     Project     = var.project_name
     Environment = var.environment
+    Stack       = local.cluster_name
     Owner       = var.owner
     ExpiresAt   = var.expires_at
     ManagedBy   = "terraform"

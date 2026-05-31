@@ -55,6 +55,56 @@ resource "aws_iam_role_policy_attachment" "eks_node_ssm" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
+resource "aws_launch_template" "gpu" {
+  name_prefix            = "${local.cluster_name}-gpu-"
+  update_default_version = true
+
+  block_device_mappings {
+    device_name = "/dev/xvda"
+
+    ebs {
+      volume_size           = var.gpu_node_disk_size_gb
+      volume_type           = "gp3"
+      encrypted             = true
+      delete_on_termination = true
+    }
+  }
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
+  }
+
+  tag_specifications {
+    resource_type = "instance"
+
+    tags = merge(local.tags, {
+      Name = "${local.cluster_name}-gpu"
+    })
+  }
+
+  tag_specifications {
+    resource_type = "volume"
+
+    tags = merge(local.tags, {
+      Name = "${local.cluster_name}-gpu"
+    })
+  }
+
+  tag_specifications {
+    resource_type = "network-interface"
+
+    tags = merge(local.tags, {
+      Name = "${local.cluster_name}-gpu"
+    })
+  }
+
+  tags = {
+    Name = "${local.cluster_name}-gpu"
+  }
+}
+
 resource "aws_eks_cluster" "this" {
   name     = local.cluster_name
   version  = var.kubernetes_version
@@ -89,12 +139,15 @@ resource "aws_eks_node_group" "gpu" {
 
   ami_type       = var.gpu_node_ami_type
   capacity_type  = "ON_DEMAND"
-  disk_size      = var.gpu_node_disk_size_gb
   instance_types = [var.gpu_instance_type]
 
+  launch_template {
+    id      = aws_launch_template.gpu.id
+    version = aws_launch_template.gpu.latest_version
+  }
+
   labels = {
-    "node-role.kubernetes.io/gpu" = "true"
-    "nvidia.com/gpu.present"      = "true"
+    "nvidia.com/gpu.present" = "true"
   }
 
   dynamic "taint" {
@@ -126,5 +179,19 @@ resource "aws_eks_node_group" "gpu" {
 
   tags = {
     Name = "${local.cluster_name}-gpu"
+  }
+}
+
+resource "aws_autoscaling_group_tag" "gpu_tags" {
+  for_each = merge(local.tags, {
+    Name = "${local.cluster_name}-gpu"
+  })
+
+  autoscaling_group_name = aws_eks_node_group.gpu.resources[0].autoscaling_groups[0].name
+
+  tag {
+    key                 = each.key
+    value               = each.value
+    propagate_at_launch = true
   }
 }
