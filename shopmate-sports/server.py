@@ -39,6 +39,8 @@ SHOPMATE_AGENT_MAX_TURNS = int(os.environ.get("SHOPMATE_AGENT_MAX_TURNS", "6"))
 SHOPMATE_DISABLE_OPENAI_AGENT_TRACING = (
     os.environ.get("SHOPMATE_DISABLE_OPENAI_AGENT_TRACING", "true").strip().lower() != "false"
 )
+SHOPMATE_USE_AGENT_TOOLS = os.environ.get("SHOPMATE_USE_AGENT_TOOLS", "false").strip().lower() == "true"
+SHOPMATE_USE_MODEL_REPLY = os.environ.get("SHOPMATE_USE_MODEL_REPLY", "false").strip().lower() == "true"
 
 SYSTEM_PROMPT = """You are ShopMate, a helpful assistant for a fictional athletic retail store.
 Help shoppers choose products from the provided catalog. Be concise, ask a follow-up
@@ -166,6 +168,17 @@ def build_model() -> Any:
 
 def build_agents() -> Any:
     model = build_model()
+    base_instructions = SYSTEM_PROMPT + "\n\nUse only this product catalog:\n" + catalog_context()
+    if not SHOPMATE_USE_AGENT_TOOLS:
+        return Agent(
+            name="ShoppingAssistantAgent",
+            instructions=(
+                base_instructions
+                + "\n\nAnswer directly in natural language. Include product names, prices, and one practical reason for each recommendation."
+            ),
+            model=model,
+        )
+
     catalog_agent = Agent(
         name="CatalogAgent",
         instructions=(
@@ -186,7 +199,7 @@ def build_agents() -> Any:
     )
     return Agent(
         name="ShoppingAssistantAgent",
-        instructions=SYSTEM_PROMPT
+        instructions=base_instructions
         + "\n\nRoute product discovery to CatalogAgent and policy questions to PolicyAgent. "
         + "If a shopper asks a mixed question, use the best specialist and produce one final customer-facing answer.",
         model=model,
@@ -216,11 +229,12 @@ async def call_agents_sdk(message: str, history: list[dict[str, str]]) -> str:
 def call_nim(message: str, history: list[dict[str, str]]) -> tuple[str, dict[str, int], bool, str | None]:
     if nim_base_url() and agents_available():
         try:
-            reply = asyncio.run(call_agents_sdk(message, history))
+            model_reply = asyncio.run(call_agents_sdk(message, history))
+            reply = model_reply if SHOPMATE_USE_MODEL_REPLY else fallback_reply(message)[0]
             return reply, {
                 "prompt_tokens": estimate_tokens(message),
-                "completion_tokens": estimate_tokens(reply),
-                "total_tokens": estimate_tokens(message) + estimate_tokens(reply),
+                "completion_tokens": estimate_tokens(model_reply),
+                "total_tokens": estimate_tokens(message) + estimate_tokens(model_reply),
             }, True, None
         except Exception as exc:  # pragma: no cover - fallback keeps lab usable
             reply, _ = fallback_reply(message)
