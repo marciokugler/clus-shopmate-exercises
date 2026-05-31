@@ -1,0 +1,59 @@
+{% extends "main.html" %}
+
+{% block tabs %}
+{{ super() }}
+
+<section class="cl-home">
+  <div class="cl-home__grid md-grid">
+    <div class="cl-home__content md-typeset">
+      <p class="cl-home__eyebrow">Cisco Live US 2026 | CLUS-LTROBS-2001 Lab Guide</p>
+      <h1>From Deployment To Deep Insights</h1>
+      <p class="cl-home__lead">
+        Follow the student path for observing a retail AI assistant across traces,
+        metrics, GPU signals, NVIDIA NIM, and tokenomics.
+      </p>
+
+      <div class="cl-home__actions">
+        <a href="{{ 'prerequisites/' | url }}" class="md-button md-button--primary">Start Lab</a>
+        <a href="{{ 'module-0-orientation/' | url }}" class="md-button">Orientation</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cl-home-body md-typeset">
+  <div class="md-grid">
+    <div class="cl-section-heading">
+      <p>Cisco Live US 2026</p>
+      <h2>Your Workshop Path</h2>
+    </div>
+
+    <div class="cl-feature-grid">
+      <a class="cl-feature-card" href="{{ 'module-1-collector/' | url }}">
+        <span>01</span>
+        <h3>Student Collector</h3>
+        <p>Deploy or validate your namespace-scoped OpenTelemetry Collector and confirm telemetry export.</p>
+      </a>
+      <a class="cl-feature-card" href="{{ 'module-2-app-instrumentation/' | url }}">
+        <span>02</span>
+        <h3>Agent Traces</h3>
+        <p>Inspect the multi-agent flow for shopping, catalog, inventory, policy, checkout, cost, and NIM spans.</p>
+      </a>
+      <a class="cl-feature-card" href="{{ 'module-3-gpu-nim-scraping/' | url }}">
+        <span>03</span>
+        <h3>GPU And NIM</h3>
+        <p>Scrape shared model-serving signals and correlate them with application behavior.</p>
+      </a>
+      <a class="cl-feature-card" href="{{ 'module-5-tokenomics/' | url }}">
+        <span>04</span>
+        <h3>Tokenomics Challenge</h3>
+        <p>Find the department, student, conversation, and agent-loop behavior behind high token spend.</p>
+      </a>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block site_nav %}{% endblock %}
+{% block container %}{% endblock %}
+{% block content %}{% endblock %}

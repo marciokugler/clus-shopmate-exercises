@@ -1,0 +1,9 @@
+---
+description: Load Codex-imported conversation history for this project (see AGENTS.md)
+alwaysApply: true
+---
+
+Follow `AGENTS.md` in this project root for Codex history lookup.
+
+Before answering questions about prior Codex work, read `codex-archive/INDEX.md`
+and the relevant thread file(s) listed there.
