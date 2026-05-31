@@ -6,6 +6,8 @@ Add Prometheus scraping to your collector for selected GPU and NVIDIA NIM metric
 
 This gives you a view of model-serving and accelerator behavior during the same time window as your app traces.
 
+![Student collector flow](assets/ai-pods/student-collector-flow.svg)
+
 ## What You Are Scraping
 
 ```mermaid
@@ -126,8 +128,60 @@ Reference:
 
 - Splunk AI Infrastructure Monitoring uses the Splunk Distribution of OpenTelemetry Collector for AI infrastructure data integrations: [Set up AI Infrastructure Monitoring](https://help.splunk.com/en/splunk-observability-cloud/observability-for-ai/splunk-ai-infrastructure-monitoring/set-up-ai-infrastructure-monitoring).
 - Splunk Collector troubleshooting lists common reasons a collector does not receive, process, or export data: [Troubleshoot the Splunk OpenTelemetry Collector](https://help.splunk.com/en?resourceId=gdi_opentelemetry_splunk-collector-troubleshooting).
+- Splunk's Cisco AI-ready POD examples show Prometheus receivers and metric filtering for NVIDIA/NIM-style collection: [Cisco AI-ready PODs collector values](https://github.com/signalfx/splunk-opentelemetry-examples/blob/main/collector/cisco-ai-ready-pods/otel-collector/values.yaml).
 
-## Step 4: Restart The Collector
+## Step 4: Wire The Receiver Into The Metrics Pipeline
+
+Update the same collector config file you used in Module 1.
+
+Add `prometheus/gpu_nim` to the metrics pipeline:
+
+```yaml
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp, prometheus/gpu_nim]
+      processors: [memory_limiter, resource/student, batch]
+      exporters: [signalfx]
+```
+
+If your lab config includes a GPU/NIM allowlist processor, keep it in the processor list:
+
+```yaml
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp, prometheus/gpu_nim]
+      processors: [memory_limiter, resource/student, filter/gpu_nim_allowlist, batch]
+      exporters: [signalfx]
+```
+
+What changed:
+
+| Change | Result |
+| --- | --- |
+| `prometheus/gpu_nim` receiver | The collector scrapes DCGM and NIM Prometheus endpoints |
+| metrics pipeline receiver list | The scrape job becomes active |
+| optional allowlist processor | Duplicate lab ingest stays controlled |
+| existing `resource/student` processor | GPU/NIM metrics carry your student identity |
+
+## Step 5: Redeploy The Collector Config
+
+If the lab uses Helm:
+
+```bash
+helm upgrade --install student-collector "$COLLECTOR_CHART" \
+  --namespace "$STUDENT_NAMESPACE" \
+  --values student-collector-values.yaml
+```
+
+If the lab uses a rendered manifest:
+
+```bash
+kubectl apply -n "$STUDENT_NAMESPACE" -f student-collector.yaml
+```
+
+Then restart and validate the rollout:
 
 ```bash
 kubectl rollout restart deploy/student-collector -n "$STUDENT_NAMESPACE"
@@ -153,7 +207,7 @@ helm rollback student-collector -n "$STUDENT_NAMESPACE"
 
 If Helm rollback is not available, reapply the last known good `student-collector-values.yaml` or `student-collector.yaml` from the lab materials.
 
-## Step 5: Validate In Splunk
+## Step 6: Validate In Splunk
 
 Filter by:
 

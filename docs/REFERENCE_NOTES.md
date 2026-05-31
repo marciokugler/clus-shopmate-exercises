@@ -28,6 +28,12 @@ This file captures the main external references and research conclusions used to
   [intersight/values.yaml](https://raw.githubusercontent.com/signalfx/splunk-opentelemetry-examples/main/collector/cisco-ai-ready-pods/intersight/values.yaml)
 - Cisco AI POD repository:
   [Cisco-AI-POD GitHub repository](https://github.com/ucs-compute-solutions/Cisco-AI-POD)
+- Cisco AI PODs data sheet:
+  [Cisco AI PODs: Pre-validated, Flexible and Modular Infrastructure for Cisco Secure AI Factory Data Sheet](https://www.cisco.com/c/en/us/products/collateral/servers-unified-computing/ucs-x-series-modular-system/ai-pods-ds.html)
+- Cisco AI Defense reference architecture:
+  [AI Defense on Cisco AI PODs Reference Architecture](https://www.cisco.com/c/en/us/td/docs/unified_computing/ucs/UCS_CVDs/AI_defense_on_Cisco_AI_PODs_reference_architecture.html)
+- MkDocs student-facing AI POD visuals:
+  [`workshop/ai-pod-docs-and-visuals.md`](/Users/mkuglerr/code2/codex_projects/ai-pods/workshop/ai-pod-docs-and-visuals.md)
 
 ---
 

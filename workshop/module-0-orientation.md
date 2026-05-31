@@ -64,6 +64,8 @@ As you move through the modules, keep asking:
 
 ## AI POD Mapping
 
+![Cisco AI POD monitoring layers](assets/ai-pods/ai-pod-monitoring-layers.svg)
+
 | Lab Signal | Production AI POD Meaning |
 | --- | --- |
 | App traces | User-visible AI workflow and application behavior |
@@ -73,6 +75,8 @@ As you move through the modules, keep asking:
 | Token metrics | AI cost, model demand, and chargeback evidence |
 
 This lab uses cloud-hosted shared infrastructure, so Cisco UCS, Nexus, and storage telemetry are not the focus. The reasoning model still maps to production: start from the user request, then correlate across app, model, GPU, and platform signals.
+
+For official references and reusable diagrams, open [AI POD Docs And Visuals](ai-pod-docs-and-visuals.md).
 
 ## Checkpoint
 

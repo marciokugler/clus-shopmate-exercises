@@ -6,6 +6,10 @@ Use Splunk Observability Cloud to connect one user request to app behavior, mode
 
 This is the operator workflow: start with the symptom, then gather enough related evidence to explain it.
 
+Use the [Data Journey](data-journey.md) as the map for this module. Here you run the drilldown: trace first, then NIM metrics, then GPU metrics, then Kubernetes health.
+
+![AI POD dashboard coverage map](assets/ai-pods/dashboard-coverage-map.svg)
+
 ## Correlation Path
 
 ```mermaid
@@ -79,6 +83,14 @@ Ask:
 - Did repeated NIM calls create more token demand?
 - Did the problem look like NIM pressure, app orchestration, or both?
 
+Useful Splunk filters:
+
+```text
+student.id=<your student id>
+deployment.environment=<your student id>
+job=nim
+```
+
 ## Step 4: Correlate To GPU Metrics
 
 Inspect GPU metrics around the same time window:
@@ -96,6 +108,16 @@ Ask:
 - Was the GPU active during the request?
 - Did GPU utilization rise during token-heavy work?
 - Was the workload waiting in app orchestration rather than saturating GPU?
+
+Useful Splunk filters:
+
+```text
+student.id=<your student id>
+deployment.environment=<your student id>
+job=dcgm
+```
+
+For an AI POD-style view, open Dashboards, search for `Cisco AI PODs`, and open `AI Pod overview`. In this lab, use the GPU and NIM panels as the primary drilldown. UCS, Nexus, storage, and vector database panels may stay empty unless the instructor enabled those integrations.
 
 ## Step 5: Check Kubernetes Health
 

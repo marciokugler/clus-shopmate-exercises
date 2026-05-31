@@ -23,6 +23,8 @@ By the end of the lab, you will be able to:
 - Filter lab telemetry by your `student.id`, namespace, department, and cost center.
 - Deploy or validate a namespace-scoped OpenTelemetry Collector.
 - Send ShopMate Sports traces and metrics through your collector.
+- Make a collector config change, redeploy it, and verify the new telemetry path.
+- Use AI POD reference docs and visual maps to understand how the lab maps to production monitoring.
 - Inspect a multi-agent AI trace with shopping, catalog, inventory, policy, checkout, cost, and NIM spans.
 - Capture safe synthetic prompt and response content.
 - Scrape shared GPU and NIM Prometheus metrics.
@@ -63,6 +65,8 @@ flowchart LR
 | Time | Module | What You Produce |
 | --- | --- | --- |
 | 0:00-0:20 | Orientation | You understand the app, telemetry path, and final challenge |
+| Reference | Data Journey | You understand how collector config, app telemetry, NIM metrics, and GPU metrics connect |
+| Reference | AI POD Docs and Visuals | You understand the official references and visual mapping to production AI POD monitoring |
 | 0:20-0:55 | Student Collector | Your collector is running and exporting telemetry |
 | 0:55-1:45 | App Instrumentation | You can find a full ShopMate Sports agent trace |
 | 1:45-2:25 | GPU and NIM Scraping | Your collector scrapes shared GPU and NIM metrics |

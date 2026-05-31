@@ -49,6 +49,8 @@ nav:
   - Overview: index.md
   - Prerequisites: prerequisites.md
   - "0. Orientation": module-0-orientation.md
+  - "Data Journey": data-journey.md
+  - "AI POD Docs and Visuals": ai-pod-docs-and-visuals.md
   - "1. Student Collector": module-1-collector.md
   - "2. App Instrumentation": module-2-app-instrumentation.md
   - "3. GPU and NIM Scraping": module-3-gpu-nim-scraping.md
@@ -56,6 +58,7 @@ nav:
   - "5. Tokenomics": module-5-tokenomics.md
   - "Final Review": final-review.md
   - "Appendix: Troubleshooting": appendix-troubleshooting.md
+  - "Appendix: GitHub and Splunk References": reference-github-splunk.md
 
 markdown_extensions:
   - admonition

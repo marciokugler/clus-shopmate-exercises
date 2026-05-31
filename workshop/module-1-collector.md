@@ -106,8 +106,85 @@ Reference:
 
 - Splunk Collector troubleshooting covers missing data, receiver pipeline issues, exporter failures, and credential problems: [Troubleshoot the Splunk OpenTelemetry Collector](https://help.splunk.com/en?resourceId=gdi_opentelemetry_splunk-collector-troubleshooting).
 - OpenTelemetry Collector troubleshooting describes internal telemetry, zPages, and Kubernetes debugging patterns: [OpenTelemetry Collector troubleshooting](https://opentelemetry.io/docs/collector/troubleshooting/).
+- Splunk publishes the Kubernetes Helm chart and collector source on GitHub: [Splunk OpenTelemetry Collector Helm chart](https://github.com/signalfx/splunk-otel-collector-chart) and [Splunk OpenTelemetry Collector](https://github.com/signalfx/splunk-otel-collector).
 
-## Step 4: Deploy The Collector
+## Step 4: Update The Collector Config File
+
+Open the collector config file provided by the lab. It is usually one of these:
+
+- `student-collector-values.yaml` if you deploy with Helm
+- `student-collector.yaml` if you deploy a rendered manifest
+
+Make sure the config has the complete path from app to Splunk:
+
+| Config section | Required outcome |
+| --- | --- |
+| `receivers.otlp` | Listens for app telemetry on `4317` and `4318` |
+| `processors.resource/student` | Adds your student, namespace, department, environment, and chargeback attributes |
+| `exporters.signalfx` | Uses the lab Splunk realm and access token |
+| `service.pipelines.traces` | Receives app traces, adds attributes, batches, and exports |
+| `service.pipelines.metrics` | Receives app metrics, adds attributes, batches, and exports |
+
+Use this minimal shape when checking your file:
+
+```yaml
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  resource/student:
+    attributes:
+      - key: student.id
+        value: ${env:STUDENT_ID}
+        action: upsert
+      - key: team.name
+        value: ${env:TEAM_NAME}
+        action: upsert
+      - key: department.name
+        value: ${env:DEPARTMENT_NAME}
+        action: upsert
+      - key: department.cost_center
+        value: ${env:DEPARTMENT_COST_CENTER}
+        action: upsert
+      - key: chargeback.account
+        value: ${env:CHARGEBACK_ACCOUNT}
+        action: upsert
+      - key: deployment.environment
+        value: ${env:STUDENT_ID}
+        action: upsert
+      - key: k8s.namespace.name
+        value: ${env:POD_NAMESPACE}
+        action: upsert
+      - key: k8s.cluster.name
+        value: ${env:LOGICAL_CLUSTER_NAME}
+        action: upsert
+  batch: {}
+
+exporters:
+  signalfx:
+    realm: ${env:SPLUNK_REALM}
+    access_token: ${env:SPLUNK_ACCESS_TOKEN}
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [resource/student, batch]
+      exporters: [signalfx]
+    metrics:
+      receivers: [otlp]
+      processors: [resource/student, batch]
+      exporters: [signalfx]
+```
+
+If your lab file already includes `memory_limiter`, health checks, or additional Splunk chart settings, keep them. The point of this step is to verify that the receiver, resource attributes, exporter, and pipelines are connected.
+
+## Step 5: Deploy Or Redeploy The Collector
 
 If the lab provides a Helm values file:
 
@@ -132,7 +209,7 @@ kubectl delete -n "$STUDENT_NAMESPACE" deploy/student-collector svc/student-coll
 
 Then rerun the Helm install or `kubectl apply` command. Use reset only for resources in your own namespace.
 
-## Step 5: Validate Collector Health
+## Step 6: Validate Collector Health
 
 ```bash
 kubectl get pods -n "$STUDENT_NAMESPACE" -l app.kubernetes.io/name=student-collector
@@ -165,7 +242,7 @@ Common patterns:
 | `CreateContainerConfigError` | missing Secret or ConfigMap |
 | no export to Splunk | Splunk realm, token Secret, exporter logs, and outbound network access |
 
-## Step 6: Find The Collector In Splunk
+## Step 7: Find The Collector In Splunk
 
 In Splunk Observability Cloud:
 
