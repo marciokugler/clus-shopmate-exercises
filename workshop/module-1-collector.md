@@ -32,7 +32,7 @@ Debug if this fails:
 
 ```bash
 kubectl config current-context
-kubectl get namespace "$STUDENT_NAMESPACE"
+kubectl get pods -n "$STUDENT_NAMESPACE"
 kubectl auth can-i --list -n "$STUDENT_NAMESPACE"
 ```
 
@@ -64,28 +64,31 @@ You should only verify that the expected key exists. Do not print the token valu
 Your collector should attach these resource attributes:
 
 ```yaml
-resource:
+resource/student:
   attributes:
     - key: student.id
-      value: ${STUDENT_ID}
+      value: ${env:STUDENT_ID}
       action: upsert
     - key: team.name
-      value: ${TEAM_NAME}
+      value: ${env:TEAM_NAME}
       action: upsert
     - key: department.name
-      value: ${DEPARTMENT_NAME}
+      value: ${env:DEPARTMENT_NAME}
       action: upsert
     - key: department.cost_center
-      value: ${DEPARTMENT_COST_CENTER}
+      value: ${env:DEPARTMENT_COST_CENTER}
       action: upsert
     - key: chargeback.account
-      value: ${CHARGEBACK_ACCOUNT}
+      value: ${env:CHARGEBACK_ACCOUNT}
       action: upsert
     - key: deployment.environment
-      value: ${STUDENT_ID}
+      value: ${env:STUDENT_ID}
+      action: upsert
+    - key: k8s.namespace.name
+      value: ${env:STUDENT_NAMESPACE}
       action: upsert
     - key: k8s.cluster.name
-      value: ${LOGICAL_CLUSTER_NAME}
+      value: ${env:LOGICAL_CLUSTER_NAME}
       action: upsert
 ```
 
@@ -158,7 +161,7 @@ processors:
         value: ${env:STUDENT_ID}
         action: upsert
       - key: k8s.namespace.name
-        value: ${env:POD_NAMESPACE}
+        value: ${env:STUDENT_NAMESPACE}
         action: upsert
       - key: k8s.cluster.name
         value: ${env:LOGICAL_CLUSTER_NAME}
@@ -184,6 +187,8 @@ service:
 
 If your lab file already includes `memory_limiter`, health checks, or additional Splunk chart settings, keep them. The point of this step is to verify that the receiver, resource attributes, exporter, and pipelines are connected.
 
+The collector pod must receive the non-secret identity values as container environment variables. The Splunk access token should come from the Kubernetes Secret named by `SPLUNK_ACCESS_TOKEN_SECRET`, not from your shell history.
+
 ## Step 5: Deploy Or Redeploy The Collector
 
 If the lab provides a Helm values file:
@@ -198,6 +203,21 @@ If the lab provides a rendered manifest:
 
 ```bash
 kubectl apply -n "$STUDENT_NAMESPACE" -f student-collector.yaml
+```
+
+If your lab values or manifest did not already inject the student identity environment variables into the collector pod, set the non-secret values on the deployment:
+
+```bash
+kubectl set env deploy/student-collector -n "$STUDENT_NAMESPACE" \
+  STUDENT_ID="$STUDENT_ID" \
+  STUDENT_NAMESPACE="$STUDENT_NAMESPACE" \
+  TEAM_NAME="$TEAM_NAME" \
+  DEPARTMENT_NAME="$DEPARTMENT_NAME" \
+  DEPARTMENT_COST_CENTER="$DEPARTMENT_COST_CENTER" \
+  CHARGEBACK_ACCOUNT="$CHARGEBACK_ACCOUNT" \
+  SPLUNK_REALM="$SPLUNK_REALM" \
+  LOGICAL_CLUSTER_NAME="$LOGICAL_CLUSTER_NAME"
+kubectl rollout status deploy/student-collector -n "$STUDENT_NAMESPACE"
 ```
 
 Reset this step:

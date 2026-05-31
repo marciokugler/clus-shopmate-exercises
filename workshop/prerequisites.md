@@ -54,6 +54,7 @@ export CHARGEBACK_ACCOUNT=cb-student-01
 export SPLUNK_REALM=us0
 export SPLUNK_ACCESS_TOKEN_SECRET=splunk-observability-token
 export LOGICAL_CLUSTER_NAME=clus-ltrobs-2001-student-01
+export COLLECTOR_CHART=splunk-otel-collector-chart/splunk-otel-collector
 ```
 
 ## How These Variables Map To Splunk
@@ -71,6 +72,7 @@ These variables become OpenTelemetry resource attributes, span attributes, metri
 | `SPLUNK_REALM` | Collector exporter endpoint selection | Determines the Splunk ingest endpoint used by the collector |
 | `SPLUNK_ACCESS_TOKEN_SECRET` | Kubernetes Secret name | Lets the collector read the lab-scoped ingest token without pasting it into files |
 | `LOGICAL_CLUSTER_NAME` | `k8s.cluster.name` | Separates your logical lab view from other students in shared infrastructure |
+| `COLLECTOR_CHART` | Helm chart reference | Used only if the lab deploys the collector with Helm instead of a rendered manifest |
 
 Reference:
 
@@ -83,7 +85,7 @@ Run:
 
 ```bash
 kubectl config current-context
-kubectl get namespace "$STUDENT_NAMESPACE"
+kubectl get pods -n "$STUDENT_NAMESPACE"
 kubectl auth can-i get pods -n "$STUDENT_NAMESPACE"
 kubectl auth can-i create deployments -n "$STUDENT_NAMESPACE"
 kubectl auth can-i create configmaps -n "$STUDENT_NAMESPACE"
@@ -100,11 +102,28 @@ Quick debug commands:
 
 ```bash
 kubectl get all -n "$STUDENT_NAMESPACE"
-kubectl describe namespace "$STUDENT_NAMESPACE"
 kubectl get events -n "$STUDENT_NAMESPACE" --sort-by=.lastTimestamp
 ```
 
 If a command fails, check that your kubeconfig context is correct and that `STUDENT_NAMESPACE` matches your assigned namespace.
+
+## Prepare The Collector Chart
+
+If the lab gives you a rendered `student-collector.yaml`, skip this section.
+
+If the lab uses Helm, add the Splunk OpenTelemetry Collector chart repo:
+
+```bash
+helm repo add splunk-otel-collector-chart https://signalfx.github.io/splunk-otel-collector-chart
+helm repo update
+helm search repo "$COLLECTOR_CHART"
+```
+
+Expected result:
+
+- Helm can find the collector chart named by `COLLECTOR_CHART`
+
+If the instructor provides a packaged chart or a different chart path, use the value from the lab handout.
 
 ## Confirm Splunk Access
 

@@ -24,7 +24,7 @@ The GPU and NIM endpoints are shared by the class. Your metrics are separated by
 Set the targets provided for the lab:
 
 ```bash
-export DCGM_SCRAPE_TARGET=dcgm-exporter.gpu-system.svc.cluster.local:9400
+export DCGM_SCRAPE_TARGET=nvidia-dcgm-exporter.gpu-operator.svc.cluster.local:9400
 export NIM_SCRAPE_TARGET=nim-service.nim-system.svc.cluster.local:8000
 ```
 
@@ -77,13 +77,13 @@ receivers:
           scrape_interval: 60s
           static_configs:
             - targets:
-                - ${DCGM_SCRAPE_TARGET}
+                - ${env:DCGM_SCRAPE_TARGET}
         - job_name: nim
           scrape_interval: 60s
           metrics_path: /v1/metrics
           static_configs:
             - targets:
-                - ${NIM_SCRAPE_TARGET}
+                - ${env:NIM_SCRAPE_TARGET}
 ```
 
 How this maps to the collector:
@@ -165,6 +165,8 @@ What changed:
 | optional allowlist processor | Duplicate lab ingest stays controlled |
 | existing `resource/student` processor | GPU/NIM metrics carry your student identity |
 
+Make sure the collector pod also receives the scrape target values as environment variables. If your values file or manifest does not already set them, apply them after the collector redeploys in Step 5.
+
 ## Step 5: Redeploy The Collector Config
 
 If the lab uses Helm:
@@ -179,6 +181,14 @@ If the lab uses a rendered manifest:
 
 ```bash
 kubectl apply -n "$STUDENT_NAMESPACE" -f student-collector.yaml
+```
+
+If your lab values or manifest did not already inject the scrape target environment variables into the collector pod, set them on the deployment:
+
+```bash
+kubectl set env deploy/student-collector -n "$STUDENT_NAMESPACE" \
+  DCGM_SCRAPE_TARGET="$DCGM_SCRAPE_TARGET" \
+  NIM_SCRAPE_TARGET="$NIM_SCRAPE_TARGET"
 ```
 
 Then restart and validate the rollout:
