@@ -4,6 +4,8 @@
 
 You do not need an AWS account, NVIDIA account, cluster-admin permissions, or Cisco AI POD hardware access.
 
+You also do not need to clone this Git repository, install Docker, build container images, or log in to a container registry. The lab guide provides the files you edit, and Kubernetes pulls the prebuilt `shopmate-ai` image.
+
 You do need:
 
 - a browser
@@ -40,22 +42,86 @@ You do need:
     winget install jqlang.jq
     ```
 
+    Use Windows Terminal with PowerShell, Git Bash, or WSL Ubuntu. WSL Ubuntu or Git Bash is the closest match for the lab command blocks because the rest of this guide uses Bash-style environment variables and line continuations.
+
+!!! tip "Windows shell choice"
+    If you use native PowerShell, replace Bash variables such as `$STUDENT_NAMESPACE` with `$env:STUDENT_NAMESPACE`, and replace Bash line continuations (`\`) with PowerShell backticks or run the command on one line.
+
 ## Set Your Lab Variables
 
-Replace the example values with the values assigned to you.
+Replace the placeholder values with the values assigned to you before running these commands.
 
-```bash
-export STUDENT_ID=student-01
-export STUDENT_NAMESPACE=student-01
-export TEAM_NAME=team-a
-export DEPARTMENT_NAME=marketing
-export DEPARTMENT_COST_CENTER=cc-4100
-export CHARGEBACK_ACCOUNT=cb-student-01
-export SPLUNK_REALM=us0
-export SPLUNK_ACCESS_TOKEN_SECRET=splunk-observability-token
-export LOGICAL_CLUSTER_NAME=clus-ltrobs-2001-student-01
-export COLLECTOR_CHART=splunk-otel-collector-chart/splunk-otel-collector
-```
+=== "macOS / Linux / WSL / Git Bash"
+
+    ```bash
+    export STUDENT_ID="<STUDENT-ID>"
+    export STUDENT_NAMESPACE="<STUDENT-NAMESPACE>"
+    export SPLUNK_REALM="<SPLUNK-REALM>"
+    export SPLUNK_ACCESS_TOKEN_SECRET="splunk-observability-token"
+    export LOGICAL_CLUSTER_NAME="clus-ltrobs-2001-<STUDENT-ID>"
+    export COLLECTOR_CHART=splunk-otel-collector-chart/splunk-otel-collector
+    ```
+
+=== "Windows PowerShell"
+
+    ```powershell
+    $env:STUDENT_ID = "<STUDENT-ID>"
+    $env:STUDENT_NAMESPACE = "<STUDENT-NAMESPACE>"
+    $env:SPLUNK_REALM = "<SPLUNK-REALM>"
+    $env:SPLUNK_ACCESS_TOKEN_SECRET = "splunk-observability-token"
+    $env:LOGICAL_CLUSTER_NAME = "clus-ltrobs-2001-<STUDENT-ID>"
+    $env:COLLECTOR_CHART = "splunk-otel-collector-chart/splunk-otel-collector"
+    ```
+
+!!! warning "Replace placeholders first"
+    Do not run this block with literal placeholder values. Your namespace, Splunk realm, and environment filter must match your lab handout.
+
+!!! info "Preloaded Splunk token Secret"
+    The instructor preloads `splunk-observability-token` in every student namespace before class. `SPLUNK_ACCESS_TOKEN_SECRET` is only the Kubernetes Secret name, not the Splunk access token. Do not export, paste, print, or share the actual Splunk token value.
+
+## Download Lab Files
+
+Download these files from the lab guide before starting the modules:
+
+| File | Used for |
+| --- | --- |
+| [student-kubeconfig.yaml](lab-files/student-kubeconfig.yaml) | Kubernetes access to the workshop cluster |
+| [shopmate-ai.yaml](lab-files/shopmate-ai.yaml) | Kubernetes manifest for the ShopMate Sports app |
+| [collector-observability-snippet.yaml](lab-files/collector-observability-snippet.yaml) | Reference sections for the Module 3 GPU/NIM collector-file change |
+
+Keep the filenames unchanged when you use the module commands. You will create `student-collector-values.yaml` yourself in Module 1 from the full copy/paste block, using the lab variables you set above.
+
+!!! warning "Instructor check"
+    If `student-kubeconfig.yaml` contains `REPLACE_WITH_...` values, the instructor has not published the real workshop access file yet. Do not continue until you have the real kubeconfig.
+
+## Configure Kubernetes Access
+
+Download [student-kubeconfig.yaml](lab-files/student-kubeconfig.yaml), then point `kubectl` at it.
+
+=== "macOS / Linux / WSL / Git Bash"
+
+    ```bash
+    export KUBECONFIG="$PWD/student-kubeconfig.yaml"
+    kubectl config get-contexts
+    kubectl config use-context "$STUDENT_ID"
+    ```
+
+=== "Windows PowerShell"
+
+    ```powershell
+    $env:KUBECONFIG = (Resolve-Path .\student-kubeconfig.yaml)
+    kubectl config get-contexts
+    kubectl config use-context $env:STUDENT_ID
+    ```
+
+Expected result:
+
+- contexts are named for student IDs, such as `student-01`
+- your current context matches your assigned `STUDENT_ID`
+- the context namespace matches your assigned `STUDENT_NAMESPACE`
+
+!!! tip "Keep the file local"
+    The kubeconfig is a lab access file. Keep it on your workstation, do not paste it into chat, and do not commit it to your own repositories.
 
 ## How These Variables Map To Splunk
 
@@ -63,16 +129,12 @@ These variables become OpenTelemetry resource attributes, span attributes, metri
 
 | Variable | Telemetry attribute or use | Where you use it in Splunk |
 | --- | --- | --- |
-| `STUDENT_ID` | `student.id` and often `deployment.environment` | Filter your traces, metrics, dashboards, and tokenomics views |
+| `STUDENT_ID` | `deployment.environment` | Filter your traces, metrics, dashboards, and tokenomics views |
 | `STUDENT_NAMESPACE` | `k8s.namespace.name` | Correlate your app traces with shared Kubernetes views |
-| `TEAM_NAME` | `team.name` | Group class results by team |
-| `DEPARTMENT_NAME` | `department.name` | Group token usage for chargeback |
-| `DEPARTMENT_COST_CENTER` | `department.cost_center` | Connect token usage to a financial owner |
-| `CHARGEBACK_ACCOUNT` | `chargeback.account` | Validate whether spend is properly tagged |
 | `SPLUNK_REALM` | Collector exporter endpoint selection | Determines the Splunk ingest endpoint used by the collector |
-| `SPLUNK_ACCESS_TOKEN_SECRET` | Kubernetes Secret name | Lets the collector read the lab-scoped ingest token without pasting it into files |
+| `SPLUNK_ACCESS_TOKEN_SECRET` | Preloaded Kubernetes Secret name, `splunk-observability-token` | Lets the collector read the lab-scoped ingest token without pasting it into files |
 | `LOGICAL_CLUSTER_NAME` | `k8s.cluster.name` | Separates your logical lab view from other students in shared infrastructure |
-| `COLLECTOR_CHART` | Helm chart reference | Used only if the lab deploys the collector with Helm instead of a rendered manifest |
+| `COLLECTOR_CHART` | Helm chart reference | Deploy the student collector |
 
 Reference:
 
@@ -83,14 +145,27 @@ Reference:
 
 Run:
 
-```bash
-kubectl config current-context
-kubectl get pods -n "$STUDENT_NAMESPACE"
-kubectl auth can-i get pods -n "$STUDENT_NAMESPACE"
-kubectl auth can-i create deployments -n "$STUDENT_NAMESPACE"
-kubectl auth can-i create configmaps -n "$STUDENT_NAMESPACE"
-kubectl auth can-i create services -n "$STUDENT_NAMESPACE"
-```
+=== "macOS / Linux / WSL / Git Bash"
+
+    ```bash
+    kubectl config current-context
+    kubectl get pods -n "$STUDENT_NAMESPACE"
+    kubectl auth can-i get pods -n "$STUDENT_NAMESPACE"
+    kubectl auth can-i create deployments -n "$STUDENT_NAMESPACE"
+    kubectl auth can-i create configmaps -n "$STUDENT_NAMESPACE"
+    kubectl auth can-i create services -n "$STUDENT_NAMESPACE"
+    ```
+
+=== "Windows PowerShell"
+
+    ```powershell
+    kubectl config current-context
+    kubectl get pods -n $env:STUDENT_NAMESPACE
+    kubectl auth can-i get pods -n $env:STUDENT_NAMESPACE
+    kubectl auth can-i create deployments -n $env:STUDENT_NAMESPACE
+    kubectl auth can-i create configmaps -n $env:STUDENT_NAMESPACE
+    kubectl auth can-i create services -n $env:STUDENT_NAMESPACE
+    ```
 
 Expected result:
 
@@ -100,24 +175,41 @@ Expected result:
 
 Quick debug commands:
 
-```bash
-kubectl get all -n "$STUDENT_NAMESPACE"
-kubectl get events -n "$STUDENT_NAMESPACE" --sort-by=.lastTimestamp
-```
+=== "macOS / Linux / WSL / Git Bash"
+
+    ```bash
+    kubectl get all -n "$STUDENT_NAMESPACE"
+    kubectl get events -n "$STUDENT_NAMESPACE" --sort-by=.lastTimestamp
+    ```
+
+=== "Windows PowerShell"
+
+    ```powershell
+    kubectl get all -n $env:STUDENT_NAMESPACE
+    kubectl get events -n $env:STUDENT_NAMESPACE --sort-by=.lastTimestamp
+    ```
 
 If a command fails, check that your kubeconfig context is correct and that `STUDENT_NAMESPACE` matches your assigned namespace.
 
 ## Prepare The Collector Chart
 
-If the lab gives you a rendered `student-collector.yaml`, skip this section.
+Add the Splunk OpenTelemetry Collector chart repo:
 
-If the lab uses Helm, add the Splunk OpenTelemetry Collector chart repo:
+=== "macOS / Linux / WSL / Git Bash"
 
-```bash
-helm repo add splunk-otel-collector-chart https://signalfx.github.io/splunk-otel-collector-chart
-helm repo update
-helm search repo "$COLLECTOR_CHART"
-```
+    ```bash
+    helm repo add splunk-otel-collector-chart https://signalfx.github.io/splunk-otel-collector-chart
+    helm repo update
+    helm search repo "$COLLECTOR_CHART"
+    ```
+
+=== "Windows PowerShell"
+
+    ```powershell
+    helm repo add splunk-otel-collector-chart https://signalfx.github.io/splunk-otel-collector-chart
+    helm repo update
+    helm search repo $env:COLLECTOR_CHART
+    ```
 
 Expected result:
 
@@ -136,7 +228,7 @@ Splunk URL=<provided in lab handout>
 Splunk realm=<provided in lab handout>
 ```
 
-The ingest token is usually already stored as a Kubernetes Secret. Do not paste ingest tokens into screenshots, public notes, or chat windows.
+The ingest token is already stored in your namespace as the preloaded Kubernetes Secret named `splunk-observability-token`. You will verify that the Secret exists in Module 1, but you will not inspect or print the token value.
 
 ## Prompt Capture Safety
 
@@ -162,4 +254,4 @@ Use only fictional retail prompts.
     The lab teaches app and AI observability without making every student operate the shared platform. Namespace access is enough for your collector, app configuration, traces, and GPU/NIM scrape exercise.
 
 ??? question "What field will you use most often to filter your own telemetry?"
-    `student.id`, along with `deployment.environment` and `k8s.namespace.name`.
+    `deployment.environment`, along with `k8s.namespace.name` and `service.name`.

@@ -32,12 +32,13 @@ Use these references when you want to understand where the lab patterns came fro
 | Reference | Use it for |
 | --- | --- |
 | [Cisco AI PODs data sheet](https://www.cisco.com/c/en/us/products/collateral/servers-unified-computing/ucs-x-series-modular-system/ai-pods-ds.html) | Product-level Cisco AI POD platform description |
+| [Cisco AI POD for Enterprise Training and Fine-Tuning Design Guide](https://www.cisco.com/c/en/us/td/docs/unified_computing/ucs/UCS_CVDs/cisco_ai_pod_for_training_design.html) | Production hardware architecture, scale unit, compute, and fabric design context |
 | [AI Defense on Cisco AI PODs Reference Architecture](https://www.cisco.com/c/en/us/td/docs/unified_computing/ucs/UCS_CVDs/AI_defense_on_Cisco_AI_PODs_reference_architecture.html) | Reference architecture context for AI POD deployment patterns |
 | [Monitor Cisco AI PODs](https://help.splunk.com/en/splunk-observability-cloud/observability-for-ai/splunk-ai-infrastructure-monitoring/set-up-ai-infrastructure-monitoring/cisco-ai-pods) | Supported Cisco AI POD components and setup sequence |
 | [Monitor the performance of Cisco AI PODs](https://help.splunk.com/en/splunk-observability-cloud/observability-for-ai/splunk-ai-infrastructure-monitoring/monitor-and-troubleshoot-your-ai-infrastructure/monitor-the-performance-of-cisco-ai-pods) | Built-in dashboard and AI POD monitoring workflow |
 | [Splunk Cisco AI Pods workshop](https://splunk.github.io/observability-workshop/en/ninja-workshops/14-cisco-ai-pods/) | Public workshop pattern for participant collectors, Prometheus scraping, and dashboard review |
 | [Cisco AI POD GitHub repository](https://github.com/ucs-compute-solutions/Cisco-AI-POD) | Cisco AI POD reference architecture material |
-| [AI POD Docs And Visuals](ai-pod-docs-and-visuals.md) | Local lab-created diagrams and official docs map |
+| [Appendix: AI POD Hardware Docs](appendix-ai-pod-hardware.md) | Student-facing hardware doc links and explanation |
 
 ## How These References Map To This Lab
 
@@ -50,5 +51,5 @@ Use these references when you want to understand where the lab patterns came fro
 | GPU and NIM scraping | Cisco AI POD examples, Prometheus receiver, Cisco AI POD setup docs |
 | AI POD-style drilldown | Cisco AI POD performance docs and Splunk Cisco AI Pods workshop |
 
-!!! note "Lab Scope"
-    The core student lab focuses on app telemetry, AI agent traces, token metrics, NIM metrics, and GPU metrics. Full Cisco AI POD coverage can also include UCS, Nexus, storage, and vector database integrations, which are reference material unless the instructor enables them.
+!!! note "Lab To Production"
+    This workshop uses app telemetry, AI agent traces, token metrics, NIM metrics, GPU metrics, Kubernetes health, and Splunk dashboards to practice the Cisco AI POD monitoring workflow. A full Cisco AI POD observability deployment can extend the same investigation path with UCS, Nexus, storage, vector database, Intersight, Nexus Dashboard, and AI Defense telemetry.

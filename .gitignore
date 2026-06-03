@@ -1,5 +1,6 @@
 .venv/
 site/
+site-ticketmate/
 .cache/
 __pycache__/
 *.pyc

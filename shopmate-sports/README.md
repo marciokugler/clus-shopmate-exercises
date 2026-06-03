@@ -4,7 +4,9 @@ Standalone fictional retail app for the AI Pods workshop.
 
 Students use the storefront and chat assistant like shoppers. The app is
 instrumented with Splunk-supported zero-code OpenAI and OpenAI Agents
-instrumentation when it is started with `opentelemetry-instrument`.
+instrumentation when it is started with `opentelemetry-instrument`. It also
+adds a small set of custom workflow spans so the multi-agent trace is easier to
+read.
 
 ## Run Locally
 
@@ -18,10 +20,48 @@ Open:
 http://127.0.0.1:8080/
 ```
 
+## Build Container Image
+
+Students do not build this image during the lab. The instructor or build team should publish the image before class and update the Kubernetes manifests if the image URI changes.
+
+From a fresh machine:
+
+```bash
+git clone <repo-url> ai-pods
+cd ai-pods
+```
+
+Build the image:
+
+```bash
+docker build -t shopmate-ai:lab-stable shopmate-sports
+```
+
+For ECR, use the repository created by Terraform:
+
+```bash
+export AWS_REGION="$(terraform -chdir=infra/terraform output -raw aws_region)"
+export SHOPMATE_REPO="$(terraform -chdir=infra/terraform output -json ecr_repository_urls | jq -r '.["shopmate-ai"]')"
+export SHOPMATE_IMAGE="${SHOPMATE_REPO}:lab-stable"
+export ECR_REGISTRY="$(printf "%s\n" "$SHOPMATE_REPO" | cut -d/ -f1)"
+
+aws ecr get-login-password --region "$AWS_REGION" \
+  | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+
+docker build --platform linux/amd64 -t "$SHOPMATE_IMAGE" shopmate-sports
+docker push "$SHOPMATE_IMAGE"
+```
+
+If you are not using Terraform-managed ECR, set `SHOPMATE_IMAGE` to your registry URI before building. Then update the `image:` field in:
+
+- `infra/k8s/shopmate-ai.yaml`
+- `workshop/lab-files/shopmate-ai.yaml`
+
 ## NIM Mode
 
-Without NIM credentials, the app uses a deterministic local assistant so the
-UI and telemetry exercise still work.
+The chat assistant requires a NIM OpenAI-compatible endpoint. If NIM is not
+configured or the Agents SDK call fails, `/api/chat` returns an error instead of
+substituting a local deterministic response.
 
 To call a NIM OpenAI-compatible endpoint through the OpenAI Agents SDK:
 
@@ -58,7 +98,7 @@ export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
 export OTEL_INSTRUMENTATION_GENAI_EMITTERS=span_metric
 export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=SPAN_ONLY
 export OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE=delta
-export OTEL_RESOURCE_ATTRIBUTES="student.id=student-01,department.name=marketing,department.cost_center=cc-4100,chargeback.account=cb-student-01,k8s.namespace.name=student-01,deployment.environment=student-01,k8s.cluster.name=clus-ltrobs-2001-student-01"
+export OTEL_RESOURCE_ATTRIBUTES="deployment.environment=student-01"
 
 export NIM_BASE_URL="http://nim-service.nim-system.svc.cluster.local:8000/v1"
 export NIM_API_KEY="..."
@@ -78,18 +118,23 @@ export SHOPMATE_DISABLE_OPENAI_AGENT_TRACING=false
 
 ## Monitoring Model
 
-The app does not emit custom monitoring events, custom spans, custom metrics, or
-JSONL telemetry. Splunk Observability data comes from automatic instrumentation:
+Splunk Observability data comes from two layers:
 
-- HTTP/server activity from the OpenTelemetry Python runtime.
 - OpenAI Agents SDK activity from `splunk-otel-instrumentation-openai-agents`.
 - OpenAI-compatible NIM calls from `splunk-otel-instrumentation-openai`.
-- Student, department, namespace, and chargeback dimensions from
-  `OTEL_RESOURCE_ATTRIBUTES`.
+- Custom `shopmate.workflow` and `shopmate.agent.*` spans that describe the app-owned workflow.
+- The standard `deployment.environment` filter from `OTEL_RESOURCE_ATTRIBUTES`.
+
+The custom spans are intentionally simple. They add workflow names, agent names,
+short safe previews, and estimated response size. They do not emit custom
+metrics, JSONL telemetry, or real customer data.
+
+The custom spans use `shopmate.*` attributes instead of `gen_ai.*` agent
+attributes. Zero-code OpenAI Agents SDK instrumentation owns the Agent Flow; the
+custom spans provide app context without duplicating AI agent nodes.
 
 The response still includes approximate token counts for the storefront token
-meter when NIM usage is not available. Those values are UI feedback, not the
-monitoring source of truth.
+meter. Those values are UI feedback, not the monitoring source of truth.
 
 ## Product Asset Generation
 

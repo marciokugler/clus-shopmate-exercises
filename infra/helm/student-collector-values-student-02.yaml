@@ -17,13 +17,44 @@ gateway:
     limits:
       cpu: "1"
       memory: 512Mi
+  extraEnvs:
+    - name: STUDENT_ID
+      value: student-02
+    - name: STUDENT_NAMESPACE
+      value: student-02
+    - name: LOGICAL_CLUSTER_NAME
+      value: clus-ltrobs-2001-student-02
   config:
+    exporters:
+      signalfx:
+        send_otlp_histograms: true
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
     processors:
       k8s_attributes: null
+      resource/environment:
+        attributes:
+          - key: deployment.environment
+            value: ${env:STUDENT_ID}
+            action: upsert
+          - key: k8s.cluster.name
+            value: ${env:LOGICAL_CLUSTER_NAME}
+            action: upsert
     service:
       pipelines:
         traces:
-          processors: [memory_limiter, batch, resource/add_cluster_name]
+          receivers: [otlp]
+          processors: [memory_limiter, resource/environment, batch]
+          exporters: [otlp_http, signalfx]
+        metrics:
+          receivers: [otlp]
+          processors: [memory_limiter, resource/environment, batch]
+          exporters: [signalfx]
 
 rbac:
   create: false
@@ -38,4 +69,4 @@ secret:
   validateSecret: false
 
 splunkObservability:
-  realm: us0
+  realm: us1

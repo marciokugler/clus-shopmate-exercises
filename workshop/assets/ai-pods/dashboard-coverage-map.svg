@@ -49,7 +49,7 @@
   <text class="text" x="436" y="333">Metrics analytics and dashboards</text>
   <rect class="experience" x="414" y="364" width="260" height="46"/>
   <text class="text" x="436" y="393">AI Pod overview where data exists</text>
-  <text class="small" x="414" y="448">Use filters: student.id, deployment.environment, k8s.namespace.name</text>
+  <text class="small" x="414" y="448">Use filters: deployment.environment, k8s.namespace.name, service.name</text>
 
   <text class="head" x="750" y="158">Optional AI POD integrations</text>
   <rect class="optional" x="750" y="184" width="268" height="46"/>
@@ -63,5 +63,5 @@
   <rect class="tagOpt" x="750" y="430" width="110" height="26" rx="13"/>
   <text class="tagText" x="772" y="448">OPTIONAL</text>
 
-  <text class="small" x="44" y="528">Dashboard parity depends on the integrations that are actually enabled. The student exercise should not claim full physical AI POD coverage unless those data sources are present.</text>
+  <text class="small" x="44" y="528">Dashboard coverage grows with enabled integrations. The core lab teaches the workflow; full AI POD environments add more infrastructure evidence.</text>
 </svg>

@@ -15,7 +15,8 @@ Current implementation decision:
 - use Splunk-supported zero-code OpenAI and OpenAI Agents instrumentation
 - keep NIM as the OpenAI-compatible model backend
 - keep the app multi-agent with OpenAI Agents SDK
-- do not emit custom app monitoring spans, custom app metrics, JSONL telemetry, `conversation.id`, or `scenario.name` in the first build
+- add simple custom OpenTelemetry spans for the ShopMate workflow and each agent step
+- do not emit custom app metrics, JSONL telemetry, `conversation.id`, or `scenario.name` in the first build
 - attach student, department, namespace, and chargeback context with `OTEL_RESOURCE_ATTRIBUTES`
 
 ## Current Splunk AI Agent Monitoring Direction
@@ -39,8 +40,15 @@ Why zero-code instrumentation:
 - it keeps the lab focused on setup, validation, correlation, and analysis
 - it supports business grouping through resource attributes such as `student.id`, `department.name`, and `chargeback.account`
 
-Code-based instrumentation can be discussed as a production extension, but it is
-not part of the first workshop build.
+Custom code-based spans are included only where zero-code instrumentation needs
+application context. The custom spans identify the retail workflow, the agent
+step, and a short safe preview of the final response. Zero-code instrumentation
+still provides the SDK, model, token, latency, and GenAI metric details.
+
+The custom spans intentionally use `shopmate.*` attributes rather than
+`gen_ai.*` semantic attributes. This keeps Splunk AI Agent Monitoring's Agent
+Flow focused on the zero-code OpenAI Agents SDK spans and prevents duplicate
+agent nodes.
 
 ## What The Multi-Agent App Does
 
@@ -51,13 +59,16 @@ Agent pattern:
 
 - `ShoppingAssistantAgent`: receives the shopper request and coordinates the answer.
 - `CatalogAgent`: helps with product search and product comparisons.
-- `PolicyAgent`: answers return, shipping, and promotion questions.
-- NIM model: produces the final natural-language response through an OpenAI-compatible API.
+- `InventoryAgent`: reviews stock and availability from catalog data.
+- `PolicyAgent`: handles return, shipping, promotion, and fit-policy questions when the demo catalog has enough information.
+- `CheckoutAgent`: summarizes cart and checkout considerations without creating real orders.
+- `CostAgent`: explains relative agent/LLM work for tokenomics discussion.
+- NIM model: runs the specialist agents through an OpenAI-compatible API.
+- Custom coordinator span: records the grounded final response that the shopper sees.
 
-The app also includes deterministic local fallback responses so the website can
-run during local development without NIM credentials. The fallback is useful for
-UI tests, but the Splunk GenAI exercise should use NIM so OpenAI-compatible calls
-are emitted.
+The app does not substitute deterministic local chat responses. If NIM is not
+configured or the Agents SDK call fails, `/api/chat` returns an error so the
+missing model path is obvious during validation.
 
 ## Required Packages
 
@@ -187,7 +198,45 @@ Validation:
 - model name is populated
 - prompt/response content is visible only when capture is enabled and supported
 
-### Exercise 4: Validate Token Metrics
+### Exercise 4: Understand Custom Workflow Spans
+
+Goal:
+
+- explain why a small amount of custom instrumentation can make an agent trace easier to read
+
+What to look for:
+
+- `shopmate.workflow`: one span for the whole shopper request
+- `shopmate.agent.CatalogAgent`: product search and tradeoffs
+- `shopmate.agent.InventoryAgent`: inventory and pickup or delivery context
+- `shopmate.agent.PolicyAgent`: returns, fit, shipping, and policy context
+- `shopmate.agent.CheckoutAgent`: demo cart and checkout caveats
+- `shopmate.agent.CostAgent`: tokenomics context for the workshop
+- `shopmate.agent.ShoppingAssistantAgent`: final coordinator response
+
+Simple explanation:
+
+Zero-code instrumentation sees the libraries. It should populate the Agent Flow
+with OpenAI Agents SDK activity, NIM model calls, tool calls, tokens, and
+latency. It does not always know what the app developer meant by a business
+workflow.
+
+The custom spans add that missing business context. They do not replace
+zero-code instrumentation and they are not marked as GenAI agent spans. They
+give the trace waterfall a readable backbone so students can say, "This user
+request became one ShopMate workflow, which called these app steps, which then
+called NIM."
+
+Validation:
+
+- the trace has one `shopmate.workflow` span for the request
+- each expected `shopmate.agent.*` span appears under the workflow
+- the final response preview is attached to `shopmate.workflow`
+- the Agent Flow uses the zero-code OpenAI Agents SDK spans instead of duplicating the custom `shopmate.agent.*` spans
+- the OpenAI/NIM spans still appear inside or near the custom app steps
+- no real personal, payment, health, customer, or confidential data is present in custom attributes
+
+### Exercise 5: Validate Token Metrics
 
 Goal:
 
@@ -213,7 +262,7 @@ Validation:
 - token usage can be grouped by student and department resource attributes
 - the token metric and trace point to the same `service.name`
 
-### Exercise 5: Correlate App, NIM, And GPU Telemetry
+### Exercise 6: Correlate App, NIM, And GPU Telemetry
 
 Goal:
 
@@ -237,7 +286,7 @@ Validation:
 - traces use the student attributes while shared GPU/NIM metrics show the platform pressure
 - the instructor can explain how this maps to a real Cisco AI POD design
 
-### Exercise 6: Tokenomics Challenge
+### Exercise 7: Tokenomics Challenge
 
 Goal:
 
@@ -302,8 +351,9 @@ kubectl -n student-01 exec deploy/shopmate-ai -- env | sort
 Common issues:
 
 - no traces: check `OTEL_EXPORTER_OTLP_ENDPOINT`, collector service name, and collector logs
-- no token metrics: check package installation and `OTEL_INSTRUMENTATION_GENAI_EMITTERS=span_metric`
+- no token metrics: check package installation, `OTEL_INSTRUMENTATION_GENAI_EMITTERS=span_metric`, `OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE=delta`, and collector `send_otlp_histograms: true`
 - no prompt content: check `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=SPAN_ONLY`
+- flat agent trace: check for `shopmate.workflow` and `shopmate.agent.*` custom spans
 - no student grouping: check `OTEL_RESOURCE_ATTRIBUTES`
 - app falls back instead of NIM: check `NIM_BASE_URL`, `NIM_API_KEY`, and `NIM_MODEL`
 
@@ -314,6 +364,7 @@ App instrumentation is ready when:
 - `shopmate-ai` traces reach Splunk
 - OpenAI-compatible NIM calls are visible through zero-code instrumentation
 - OpenAI Agents SDK activity is visible where supported
+- `shopmate.workflow` and `shopmate.agent.*` spans make the multi-agent flow readable
 - token metrics are visible
 - prompt capture works with safe synthetic prompts
 - traces and metrics are filterable by `student.id`

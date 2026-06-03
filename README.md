@@ -64,6 +64,22 @@ Build validation:
 mkdocs build --strict
 ```
 
+Student walkthrough validation:
+
+```bash
+pip install -r requirements-qa.txt
+python -m playwright install chromium
+mkdocs serve -a 127.0.0.1:8001
+```
+
+In a second terminal:
+
+```bash
+python scripts/student_mkdocs_walkthrough.py --base-url http://127.0.0.1:8001/
+```
+
+The Playwright walkthrough opens the published pages like a student, checks the main lab path, confirms the AI POD/GPU framing appears, and fails if instructor-only framing text appears in student pages.
+
 The MkDocs navigation intentionally includes only student-facing content:
 
 - workshop overview
@@ -145,3 +161,5 @@ For the agent responsible for instructor setup, read [`docs/INSTRUCTOR_LAB_SETUP
 For account and student access requirements, read [`docs/ACCOUNTS_AND_ACCESS_PLAN.md`](/Users/mkuglerr/code2/codex_projects/ai-pods/docs/ACCOUNTS_AND_ACCESS_PLAN.md).
 
 For local macOS validation, read [`docs/MINIKUBE_MACOS_TEST_PLAN.md`](/Users/mkuglerr/code2/codex_projects/ai-pods/docs/MINIKUBE_MACOS_TEST_PLAN.md).
+
+For the final student go/no-go checklist, read [`docs/STUDENT_LAUNCH_READINESS.md`](/Users/mkuglerr/code2/codex_projects/ai-pods/docs/STUDENT_LAUNCH_READINESS.md).

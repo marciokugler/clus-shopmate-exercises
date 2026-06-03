@@ -1,0 +1,87 @@
+site_name: TicketMate AI Observability Workshop
+site_description: Three-hour GenAI observability workshop with TicketMate AI, Splunk, NIM, and GPU metrics
+site_author: Cisco Live US 2026 Lab Team
+copyright: Copyright &copy; 2026 Cisco
+docs_dir: workshop-ticketmate
+site_dir: site-ticketmate
+
+repo_name: ai-pods
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - navigation.instant
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: black
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: teal
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Inter
+    code: Roboto Mono
+
+nav:
+  - Overview: index.md
+  - Prerequisites: prerequisites.md
+  - "Lab Files": lab-files.md
+  - "0. Orientation": module-0-orientation.md
+  - "1. Collector Setup": module-1-collector.md
+  - "2. App Deploy": module-2-app-deploy.md
+  - "3. GenAI and Tools": module-3-genai-tool-monitoring.md
+  - "4. GPU and NIM Correlation": module-4-gpu-nim-correlation.md
+  - "5. Simulator Scenarios": module-5-simulator-scenarios.md
+  - "6. Tokenomics Dashboard": module-6-tokenomics-dashboard.md
+  - "7. Token Spike Detector": module-7-token-spike-detector.md
+  - "8. Final Challenge": module-8-final-challenge.md
+  - "Appendix: Troubleshooting": appendix-troubleshooting.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+
+plugins:
+  - search
+
+extra:
+  generator: false
+  event_name: Cisco Live US 2026
+  event_year: "2026"
+
+extra_css:
+  - stylesheets/extra.css

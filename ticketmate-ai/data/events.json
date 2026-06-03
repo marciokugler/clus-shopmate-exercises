@@ -1,0 +1,106 @@
+{
+  "events": [
+    {
+      "id": "evt-aurora-pulse",
+      "artist": "Aurora Pulse",
+      "genre": "Electronic",
+      "city": "Las Vegas",
+      "venue": "Neon Hall",
+      "date": "2026-06-11",
+      "doors": "19:00",
+      "age_limit": "18+",
+      "summary": "High-energy electronic set with immersive lighting and reserved floor pods.",
+      "sections": [
+        {"name": "Balcony", "price": 64, "fees": 14, "available": 180, "notes": "Best value and full-stage view."},
+        {"name": "Lower Bowl", "price": 118, "fees": 22, "available": 74, "notes": "Closer view with assigned seating."},
+        {"name": "Floor", "price": 156, "fees": 28, "available": 36, "notes": "Standing room near the stage."}
+      ],
+      "tags": ["dance", "lighting", "late-night", "group-friendly"]
+    },
+    {
+      "id": "evt-canyon-strings",
+      "artist": "Canyon Strings",
+      "genre": "Acoustic",
+      "city": "Denver",
+      "venue": "Summit Theater",
+      "date": "2026-06-13",
+      "doors": "18:30",
+      "age_limit": "All ages",
+      "summary": "Acoustic folk performance with quiet seating and strong accessibility options.",
+      "sections": [
+        {"name": "Mezzanine", "price": 48, "fees": 10, "available": 92, "notes": "Quietest section with easy aisle access."},
+        {"name": "Orchestra", "price": 86, "fees": 16, "available": 51, "notes": "Balanced sound and close sightlines."},
+        {"name": "Front Row", "price": 140, "fees": 24, "available": 8, "notes": "Limited premium seats."}
+      ],
+      "tags": ["folk", "quiet", "family", "accessible"]
+    },
+    {
+      "id": "evt-skyline-brass",
+      "artist": "Skyline Brass",
+      "genre": "Jazz",
+      "city": "Chicago",
+      "venue": "Lakefront Room",
+      "date": "2026-06-14",
+      "doors": "20:00",
+      "age_limit": "21+",
+      "summary": "Modern jazz quintet with table seating and two short intermissions.",
+      "sections": [
+        {"name": "Bar Rail", "price": 55, "fees": 12, "available": 44, "notes": "Casual view with standing counter."},
+        {"name": "Table", "price": 98, "fees": 20, "available": 28, "notes": "Best for groups that want service."},
+        {"name": "VIP Table", "price": 175, "fees": 35, "available": 6, "notes": "Premium table with closer stage view."}
+      ],
+      "tags": ["jazz", "tables", "date-night", "small-room"]
+    },
+    {
+      "id": "evt-ember-road",
+      "artist": "Ember Road",
+      "genre": "Rock",
+      "city": "Austin",
+      "venue": "Red River Amphitheater",
+      "date": "2026-06-15",
+      "doors": "18:00",
+      "age_limit": "All ages",
+      "summary": "Outdoor rock concert with lawn seating, covered bowl, and parking bundles.",
+      "sections": [
+        {"name": "Lawn", "price": 42, "fees": 9, "available": 320, "notes": "Lowest cost and best for flexible groups."},
+        {"name": "Covered Bowl", "price": 104, "fees": 20, "available": 66, "notes": "Covered assigned seats."},
+        {"name": "Pit", "price": 148, "fees": 26, "available": 19, "notes": "Standing section closest to stage."}
+      ],
+      "tags": ["rock", "outdoor", "parking", "all-ages"]
+    },
+    {
+      "id": "evt-metro-soul",
+      "artist": "Metro Soul Collective",
+      "genre": "R&B",
+      "city": "Atlanta",
+      "venue": "Peachtree Ballroom",
+      "date": "2026-06-17",
+      "doors": "19:30",
+      "age_limit": "18+",
+      "summary": "R&B showcase with reserved tables and accessible balcony seating.",
+      "sections": [
+        {"name": "Balcony", "price": 72, "fees": 14, "available": 101, "notes": "Comfortable view and accessible rows."},
+        {"name": "Main Floor", "price": 126, "fees": 24, "available": 42, "notes": "Closest assigned seating."},
+        {"name": "Table Package", "price": 210, "fees": 42, "available": 10, "notes": "Four-person table sold per ticket equivalent."}
+      ],
+      "tags": ["rnb", "tables", "accessible", "premium"]
+    },
+    {
+      "id": "evt-river-pop",
+      "artist": "River Pop",
+      "genre": "Pop",
+      "city": "Seattle",
+      "venue": "Harbor Dome",
+      "date": "2026-06-18",
+      "doors": "18:30",
+      "age_limit": "All ages",
+      "summary": "Large pop show with quick sell-through and strict transfer policy.",
+      "sections": [
+        {"name": "Upper Bowl", "price": 88, "fees": 18, "available": 220, "notes": "Best price for a large arena show."},
+        {"name": "Lower Bowl", "price": 164, "fees": 31, "available": 70, "notes": "Better view and assigned seating."},
+        {"name": "Club", "price": 248, "fees": 46, "available": 16, "notes": "Premium entrance and shorter concession lines."}
+      ],
+      "tags": ["pop", "arena", "high-demand", "all-ages"]
+    }
+  ]
+}

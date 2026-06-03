@@ -12,7 +12,7 @@ Confirm you have evidence for each item:
 
 | Evidence | Found? |
 | --- | --- |
-| Your `student.id` filter works |  |
+| Your `deployment.environment` filter works |  |
 | ShopMate Sports trace is visible |  |
 | Agent spans are visible |  |
 | NIM LLM spans are visible |  |
@@ -21,22 +21,17 @@ Confirm you have evidence for each item:
 | NIM metrics are visible |  |
 | Kubernetes namespace filter works |  |
 | Agent-loop scenario is visible |  |
-| Chargeback fields are present |  |
 
 ## Final Answer Template
 
 Use this structure for your final answer:
 
 ```text
-The highest token user was:
-
-The highest token department was:
+The highest token environment was:
 
 The highest-token conversation was:
 
 The scenario was:
-
-The spend was properly chargeback-tagged:
 
 The trace evidence was:
 
@@ -52,8 +47,8 @@ The operational recommendation is:
 Think about how this maps to a real AI platform:
 
 - What alert would catch this earlier?
-- Should token budget be enforced per request, conversation, student, or department?
-- Which team owns the fix: app team, platform team, model-serving team, or finance operations?
+- Should token budget be enforced per request, conversation, or environment?
+- Which team owns the fix: app team, platform team, or model-serving team?
 - What would Cisco UCS, Nexus, or storage telemetry add if this were a physical AI POD?
 
 ## Short Quiz
@@ -63,9 +58,6 @@ Think about how this maps to a real AI platform:
 
 ??? question "GPU utilization is normal, but one request is very expensive. What does that suggest?"
     The issue may be app orchestration or prompt behavior rather than a GPU capacity problem.
-
-??? question "Why does chargeback need both technical and business attributes?"
-    Technical fields explain what happened. Business fields explain who owns the cost.
 
 ??? question "What is the safest way to capture prompts in this lab?"
     Use only synthetic retail prompts and capture content only in the validated lab mode.

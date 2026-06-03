@@ -28,13 +28,75 @@ Use this order:
 
     ```bash
     helm uninstall student-collector -n "$STUDENT_NAMESPACE"
-    kubectl delete deploy/student-collector svc/student-collector configmap/student-collector -n "$STUDENT_NAMESPACE" --ignore-not-found
+    kubectl delete deploy/student-collector svc/student-collector configmap/student-collector-otel-collector -n "$STUDENT_NAMESPACE" --ignore-not-found
     ```
 
-    Then reinstall from the lab-provided values or manifest.
+    Then recreate `student-collector-values.yaml` from the Module 1 baseline snippet and reinstall with Helm.
+
+!!! failure "Helm says `failed to parse student-collector-values.yaml`"
+    Inspect the start of the file:
+
+    ```bash
+    head -n 5 student-collector-values.yaml
+    ```
+
+    The first line should be:
+
+    ```text
+    fullnameOverride: student-collector
+    ```
+
+    If the file starts with `:` or `cat > student-collector-values.yaml`, you saved the shell command into the file instead of running it. Delete `student-collector-values.yaml`, then rerun the full Module 1 collector creation command in your terminal.
+
+!!! failure "Collector pod is CreateContainerConfigError"
+    Kubernetes could not build the collector container configuration. The most common cause is a missing preloaded Secret, invalid Secret contents, or a missing ConfigMap.
+
+    Inspect the pod event:
+
+    ```bash
+    kubectl describe pod -n "$STUDENT_NAMESPACE" -l app=splunk-otel-collector
+    ```
+
+    Confirm the preloaded token Secret exists:
+
+    ```bash
+    kubectl get secret "$SPLUNK_ACCESS_TOKEN_SECRET" -n "$STUDENT_NAMESPACE"
+    ```
+
+    If the Secret exists but the pod still cannot start, ask the instructor to validate the preloaded Secret. Do not inspect or print Secret data yourself.
 
 !!! failure "Collector runs but exports nothing"
     Confirm the app points to `http://student-collector:4318`, the OTLP receiver is enabled, and the Splunk exporter has the right realm and token.
+
+!!! failure "AI overview is empty but ShopMate traces exist"
+    Check two collector settings:
+
+    - the collector must preserve OTLP histogram metrics with `send_otlp_histograms: true`
+    - the collector must not filter OTLP app metrics through the GPU/NIM allowlist
+
+    The app metrics pipeline must stay unfiltered, and only the separate `metrics/gpu_nim` pipeline should use `filter/gpu_nim_allowlist`.
+
+    Inspect the rendered collector config:
+
+    ```bash
+    kubectl get configmap student-collector-otel-collector -n "$STUDENT_NAMESPACE" \
+      -o jsonpath='{.data.relay}' \
+      | grep -n "send_otlp_histograms\\|metrics/gpu_nim\\|filter/gpu_nim_allowlist\\|receivers: \\[otlp\\]"
+    ```
+
+    Correct shape:
+
+    ```yaml
+    exporters:
+      signalfx:
+        send_otlp_histograms: true
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/environment, batch]
+    metrics/gpu_nim:
+      receivers: [prometheus/gpu_nim]
+      processors: [memory_limiter, resource/environment, filter/gpu_nim_allowlist, batch]
+    ```
 
 !!! failure "Authentication errors to Splunk"
     Confirm the Kubernetes Secret exists in your namespace and was mounted or referenced by the collector values file.
@@ -56,7 +118,7 @@ Use this order:
     ```
 
 !!! failure "Agent flow is flat or incomplete"
-    Confirm the app emits workflow, agent, tool, and LLM spans rather than only HTTP server spans.
+    Confirm the app emits the `shopmate.workflow` span and child `shopmate.agent.*` spans, then look inside those spans for OpenAI Agents SDK and NIM LLM activity. The custom spans explain the app workflow; zero-code instrumentation provides the SDK, tool, model, token, and GenAI metric details.
 
 !!! failure "Prompt content is missing"
     Confirm safe capture is enabled with `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=SPAN_ONLY` and the instrumentation library supports content capture in the selected mode.
@@ -89,12 +151,12 @@ Use this order:
     Use `k8s.namespace.name`, pod name, and `service.name`. Kubernetes metrics come from the shared platform telemetry path, not your student collector.
 
 !!! failure "GPU metrics appear duplicated"
-    This is expected in workshop-compatible mode because each student collector scrapes shared endpoints. Filter by `student.id`, `deployment.environment`, or logical `k8s.cluster.name`.
+    This is expected in workshop-compatible mode because each student collector scrapes shared endpoints. Filter by `deployment.environment`.
 
 ## Tokenomics Issues
 
-!!! failure "Chargeback grouping fails"
-    Confirm `department.name`, `department.cost_center`, and `chargeback.account` are attached to spans or resources before export.
+!!! failure "Environment grouping fails"
+    Confirm `OTEL_RESOURCE_ATTRIBUTES=deployment.environment=<your student id>` is attached to the app deployment before export.
 
 !!! failure "Token totals look too low"
     Confirm every NIM call records prompt and completion tokens, and check whether retries or tool calls are represented as separate spans.
@@ -103,7 +165,7 @@ Use this order:
     The zero-code app does not emit custom loop attributes. Look for repeated OpenAI Agents SDK activity, repeated NIM-backed LLM calls, high token usage, and long latency in the trace.
 
 !!! failure "One student dominates class metrics"
-    Confirm this is not caused by missing filters, duplicated traffic generation, or a collector using the wrong `student.id`.
+    Confirm this is not caused by missing filters, duplicated traffic generation, or a collector using the wrong `deployment.environment`.
 
 ## Important Environment Variables
 
@@ -112,9 +174,9 @@ Use this order:
 | `OTEL_SERVICE_NAME` | `shopmate-ai` or the lab-provided ShopMate service name | App appears under an unexpected service name |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://student-collector:4318` | App cannot send telemetry or collector receives nothing |
 | `OTEL_EXPORTER_OTLP_PROTOCOL` | `http/protobuf` | Protocol mismatch or exporter errors |
-| `OTEL_RESOURCE_ATTRIBUTES` | student, department, namespace, and cluster attributes | Splunk data appears but cannot be filtered or charged back |
+| `OTEL_RESOURCE_ATTRIBUTES` | `deployment.environment=<your student id>` | Splunk data appears but cannot be filtered by environment |
 | `OTEL_INSTRUMENTATION_GENAI_EMITTERS` | `span_metric` | Missing GenAI spans or token metrics |
 | `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` | `SPAN_ONLY` | Prompt/response content missing from spans |
 | `OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE` | `delta` | Counter-style metrics may not behave as expected |
 | `SPLUNK_REALM` | instructor-provided realm | Collector exports to the wrong endpoint |
-| `SPLUNK_ACCESS_TOKEN_SECRET` | instructor-provided Secret name | Collector cannot authenticate to Splunk |
+| `SPLUNK_ACCESS_TOKEN_SECRET` | `splunk-observability-token`, the preloaded Kubernetes Secret name | Collector cannot authenticate to Splunk |

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TicketMate AI</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="TicketMate AI home">
+        <span class="brand-mark">TM</span>
+        <span>TicketMate AI</span>
+      </a>
+      <div class="status">
+        <span id="modelName">model pending</span>
+        <strong id="nimStatus">checking</strong>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <section class="event-panel" aria-label="Concert events">
+        <div class="panel-heading">
+          <p>Events</p>
+          <h1>Concert Tickets</h1>
+        </div>
+        <div class="filter-row">
+          <label>
+            <span>City</span>
+            <select id="cityFilter">
+              <option value="">All cities</option>
+            </select>
+          </label>
+          <label>
+            <span>Genre</span>
+            <select id="genreFilter">
+              <option value="">All genres</option>
+            </select>
+          </label>
+        </div>
+        <div class="event-list" id="eventList"></div>
+      </section>
+
+      <section class="chat-panel" aria-label="TicketMate chat">
+        <div class="task-bar">
+          <label>
+            <span>Tickets</span>
+            <input id="ticketCount" type="number" min="1" max="8" value="2" />
+          </label>
+          <label>
+            <span>Budget</span>
+            <input id="budgetInput" type="number" min="20" max="2000" step="10" value="250" />
+          </label>
+          <label>
+            <span>Scenario</span>
+            <select id="scenarioSelect">
+              <option value="free-chat">Free chat</option>
+              <option value="baseline">Baseline</option>
+              <option value="token-surge">Token surge</option>
+              <option value="wrong-tool-call">Wrong tool call</option>
+              <option value="problem-agent-behavior">Problem agent behavior</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="chat-log" id="chatLog" aria-live="polite"></div>
+
+        <form class="composer" id="chatForm">
+          <label class="visually-hidden" for="chatInput">Message TicketMate</label>
+          <textarea id="chatInput" rows="4" placeholder="Plan a concert night for your group"></textarea>
+          <button type="submit">Send</button>
+        </form>
+      </section>
+
+      <aside class="insight-panel" aria-label="Request details">
+        <div class="metric-grid">
+          <div>
+            <span>Session tokens</span>
+            <strong id="sessionTokens">0</strong>
+          </div>
+          <div>
+            <span>Last request</span>
+            <strong id="lastTokens">0</strong>
+          </div>
+          <div>
+            <span>Latency</span>
+            <strong id="lastLatency">0 ms</strong>
+          </div>
+        </div>
+        <div class="agent-timeline" id="agentTimeline">
+          <div class="empty-state">Agent activity appears after a request.</div>
+        </div>
+      </aside>
+    </main>
+
+    <script src="/app.js" defer></script>
+  </body>
+</html>

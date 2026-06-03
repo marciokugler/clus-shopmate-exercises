@@ -11,6 +11,7 @@ Body:
 - From Deployment to Deep Insights: Mastering AI/ML with Cisco AI Pods & Splunk
 - Cisco Live 4-hour instructor-led lab
 - Workshop-based delivery model with shared AWS EKS infrastructure
+- 20 prepared student namespaces with preloaded Splunk Observability token Secrets
 
 ## Slide 2
 
@@ -36,13 +37,13 @@ Body:
 
 ## Slide 4
 
-Title: `40-Student Lab Architecture`
+Title: `20-Student Lab Architecture`
 
 Body:
 
 - One shared AWS EKS cluster with GPU-backed shared services
 - Student laptops connect with namespace-scoped Kubernetes access
-- One Kubernetes identity and one namespace per student
+- One Kubernetes identity and one namespace per student, `student-01` through `student-20`
 - One namespace-scoped collector and app workflow per student
 - One shared Splunk Observability Cloud organization
 
@@ -70,6 +71,7 @@ Body:
 - Configure receivers, processors, and exporters
 - Validate data in Splunk and explore dashboards
 - Investigate a bounded agent-loop token burn scenario
+- Follow the lab guide through the final tokenomics review and evidence checklist
 
 ## Slide 7
 
@@ -107,7 +109,9 @@ Body:
 - Pre-stage cluster services, models, and shared backends
 - Validate kubectl, Helm, kubeconfig, and workshop files before delivery
 - Validate Splunk tokens, realm, and dashboard access
-- Run a scale test for 40 collectors before the event
+- Confirm `splunk-observability-token` exists in all 20 namespaces with key `splunk_observability_access_token`
+- Run a scale test for 20 collectors before the event
+- Keep test seats clean after dry runs: no residual `shopmate-ai` or `student-collector` workloads
 
 ## Slide 10
 
@@ -138,7 +142,15 @@ Title: `Next Steps`
 
 Body:
 
-- Finalize the 40-student namespace and credential model
-- Adapt the workshop guide into Cisco Live instructor and attendee guides
-- Build an architecture diagram and event runbook
-- Dry-run the lab with full concurrency before conference delivery
+- Publish or serve the lab guide and share the URL with students
+- Start students at `Prerequisites`, then follow Modules 0-5 and `Final Review`
+- Run the readiness checklist in `docs/STUDENT_LAUNCH_READINESS.md`
+- Dry-run the lab with all 20 student namespaces before conference delivery
+
+## Lab Guide Links
+
+- Local guide preview: `http://127.0.0.1:8001/`
+- Guide source: `workshop/index.md`
+- Prerequisites: `workshop/prerequisites.md`
+- Final Review: `workshop/final-review.md`
+- Instructor readiness: `docs/STUDENT_LAUNCH_READINESS.md`

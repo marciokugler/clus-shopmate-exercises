@@ -36,8 +36,8 @@ spec:
             - name: NIM_MODEL
               value: meta/llama-3.2-1b-instruct
             - name: SHOPMATE_USE_AGENT_TOOLS
-              value: "false"
-            - name: SHOPMATE_USE_MODEL_REPLY
+              value: "true"
+            - name: SHOPMATE_DISABLE_OPENAI_AGENT_TRACING
               value: "false"
             - name: OTEL_SERVICE_NAME
               value: shopmate-ai
@@ -52,7 +52,7 @@ spec:
             - name: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
               value: delta
             - name: OTEL_RESOURCE_ATTRIBUTES
-              value: student.id=student-01,team.name=team-a,department.name=marketing,department.cost_center=cc-4100,chargeback.account=cb-student-01,k8s.namespace.name=student-01,deployment.environment=student-01,k8s.cluster.name=clus-ltrobs-2001-student-01
+              value: deployment.environment=student-01
           readinessProbe:
             httpGet:
               path: /healthz
@@ -130,8 +130,8 @@ spec:
             - name: NIM_MODEL
               value: meta/llama-3.2-1b-instruct
             - name: SHOPMATE_USE_AGENT_TOOLS
-              value: "false"
-            - name: SHOPMATE_USE_MODEL_REPLY
+              value: "true"
+            - name: SHOPMATE_DISABLE_OPENAI_AGENT_TRACING
               value: "false"
             - name: OTEL_SERVICE_NAME
               value: shopmate-ai
@@ -146,7 +146,7 @@ spec:
             - name: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
               value: delta
             - name: OTEL_RESOURCE_ATTRIBUTES
-              value: student.id=student-02,team.name=team-a,department.name=marketing,department.cost_center=cc-4100,chargeback.account=cb-student-02,k8s.namespace.name=student-02,deployment.environment=student-02,k8s.cluster.name=clus-ltrobs-2001-student-02
+              value: deployment.environment=student-02
           readinessProbe:
             httpGet:
               path: /healthz

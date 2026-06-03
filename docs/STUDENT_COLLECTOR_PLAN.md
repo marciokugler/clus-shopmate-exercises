@@ -312,7 +312,7 @@ service:
     traces:
       receivers: [otlp]
       processors: [memory_limiter, resource/student, batch]
-      exporters: [signalfx]
+      exporters: [otlp_http, signalfx]
     metrics:
       receivers: [otlp]
       processors: [memory_limiter, resource/student, batch]

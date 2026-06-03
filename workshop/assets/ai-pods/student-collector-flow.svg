@@ -33,7 +33,7 @@
 
   <rect class="namespace" x="54" y="120" width="610" height="382"/>
   <text class="label" x="82" y="154">Student namespace</text>
-  <text class="small" x="82" y="178">student.id, deployment.environment, k8s.namespace.name, chargeback.account</text>
+  <text class="small" x="82" y="178">deployment.environment, k8s.namespace.name, service.name</text>
 
   <rect class="card app" x="94" y="218" width="190" height="116"/>
   <text class="head" x="116" y="250">ShopMate Sports</text>
@@ -44,7 +44,7 @@
   <rect class="card collector" x="412" y="208" width="210" height="144"/>
   <text class="head" x="434" y="240">Student Collector</text>
   <text class="text" x="434" y="268">OTLP 4317/4318</text>
-  <text class="text" x="434" y="292">resource/student</text>
+  <text class="text" x="434" y="292">resource/environment</text>
   <text class="text" x="434" y="316">batch and export</text>
   <text class="text" x="434" y="340">Prometheus scraping</text>
 

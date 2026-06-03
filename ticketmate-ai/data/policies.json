@@ -1,0 +1,45 @@
+{
+  "venues": {
+    "Neon Hall": {
+      "refund": "Refunds are available only if the event is cancelled or moved.",
+      "transfer": "Mobile ticket transfer opens 48 hours before doors.",
+      "accessibility": "Accessible seating is available in Balcony and Lower Bowl.",
+      "parking": "Paid parking is available in the Neon Garage."
+    },
+    "Summit Theater": {
+      "refund": "Refunds are available for cancelled events. Exchanges are not guaranteed.",
+      "transfer": "Transfers are allowed until two hours before doors.",
+      "accessibility": "Accessible entrances and companion seats are available.",
+      "parking": "Street parking and transit are recommended."
+    },
+    "Lakefront Room": {
+      "refund": "Jazz table tickets are non-refundable unless the event is cancelled.",
+      "transfer": "Transfers require the original buyer's mobile account.",
+      "accessibility": "Accessible table seating is limited and should be selected at purchase.",
+      "parking": "Validated garage parking is available after 18:00."
+    },
+    "Red River Amphitheater": {
+      "refund": "Outdoor shows continue rain or shine unless the venue announces cancellation.",
+      "transfer": "Transfers are allowed for all sections.",
+      "accessibility": "Accessible lawn and covered bowl sections are available.",
+      "parking": "Parking bundles can be added during checkout."
+    },
+    "Peachtree Ballroom": {
+      "refund": "Refunds are not available after purchase unless the event is cancelled.",
+      "transfer": "Transfers are allowed until noon on event day.",
+      "accessibility": "Accessible balcony rows are available.",
+      "parking": "Nearby garage parking is not included with the ticket."
+    },
+    "Harbor Dome": {
+      "refund": "Refunds are available only for cancelled or postponed events.",
+      "transfer": "Transfer is restricted until 24 hours before doors for high-demand shows.",
+      "accessibility": "Accessible upper and lower bowl seats are available.",
+      "parking": "Prepaid parking is recommended."
+    }
+  },
+  "limits": [
+    "TicketMate is a fictional workshop app and does not sell real tickets.",
+    "Inventory and pricing are static demo data.",
+    "Do not enter real payment, identity, or private customer information."
+  ]
+}

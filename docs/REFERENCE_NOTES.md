@@ -30,10 +30,12 @@ This file captures the main external references and research conclusions used to
   [Cisco-AI-POD GitHub repository](https://github.com/ucs-compute-solutions/Cisco-AI-POD)
 - Cisco AI PODs data sheet:
   [Cisco AI PODs: Pre-validated, Flexible and Modular Infrastructure for Cisco Secure AI Factory Data Sheet](https://www.cisco.com/c/en/us/products/collateral/servers-unified-computing/ucs-x-series-modular-system/ai-pods-ds.html)
+- Cisco AI POD training and fine-tuning design guide:
+  [Cisco AI POD for Enterprise Training and Fine-Tuning Design Guide](https://www.cisco.com/c/en/us/td/docs/unified_computing/ucs/UCS_CVDs/cisco_ai_pod_for_training_design.html)
 - Cisco AI Defense reference architecture:
   [AI Defense on Cisco AI PODs Reference Architecture](https://www.cisco.com/c/en/us/td/docs/unified_computing/ucs/UCS_CVDs/AI_defense_on_Cisco_AI_PODs_reference_architecture.html)
-- MkDocs student-facing AI POD visuals:
-  [`workshop/ai-pod-docs-and-visuals.md`](/Users/mkuglerr/code2/codex_projects/ai-pods/workshop/ai-pod-docs-and-visuals.md)
+- MkDocs student-facing AI POD hardware appendix and visuals:
+  [`workshop/appendix-ai-pod-hardware.md`](/Users/mkuglerr/code2/codex_projects/ai-pods/workshop/appendix-ai-pod-hardware.md)
 
 ---
 

@@ -1,0 +1,12 @@
+.md-grid {
+  max-width: 1440px;
+}
+
+.tm-agenda table {
+  width: 100%;
+}
+
+.tm-callout {
+  border-left: 4px solid #007a78;
+  padding-left: 1rem;
+}

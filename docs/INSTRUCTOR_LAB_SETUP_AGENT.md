@@ -123,7 +123,7 @@ Tasks:
 2. Verify Splunk Observability org, realm, users, and ingest token.
 3. Verify NVIDIA/NGC access and NIM model entitlement.
 4. Verify container registry access.
-5. Decide whether Splunk tokens are preloaded as Kubernetes Secrets or distributed to students.
+5. Preload the lab-scoped Splunk token as the `splunk-observability-token` Kubernetes Secret in every student namespace.
 6. Decide student Kubernetes access method.
 7. Generate the student roster.
 
@@ -235,8 +235,8 @@ Each namespace needs:
 - namespace object
 - student service account
 - RBAC sufficient to deploy/read namespace resources
-- Splunk realm secret or config
-- Splunk ingest token secret if the lab chooses to preload it
+- Splunk realm value in the lab handout
+- preloaded `splunk-observability-token` Secret
 - app config placeholders
 - collector config placeholders
 
