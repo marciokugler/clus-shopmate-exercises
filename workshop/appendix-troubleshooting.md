@@ -6,7 +6,6 @@ Start with these commands in your namespace:
 
 ```bash
 kubectl get all -n "$STUDENT_NAMESPACE"
-kubectl get events -n "$STUDENT_NAMESPACE" --sort-by=.lastTimestamp
 kubectl logs deploy/student-collector -n "$STUDENT_NAMESPACE" --tail=100
 kubectl logs deploy/shopmate-ai -n "$STUDENT_NAMESPACE" --tail=100
 ```
@@ -141,7 +140,7 @@ Use this order:
 
     ```bash
     kubectl logs deploy/student-collector -n "$STUDENT_NAMESPACE" --tail=100
-    kubectl get configmap student-collector -n "$STUDENT_NAMESPACE" -o yaml
+    kubectl get configmap student-collector-otel-collector -n "$STUDENT_NAMESPACE" -o yaml
     kubectl delete pod scrape-test nim-test -n "$STUDENT_NAMESPACE" --ignore-not-found
     ```
 

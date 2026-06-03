@@ -10,6 +10,7 @@ Local student docs are ready:
 - Playwright student walkthrough passes against `http://127.0.0.1:8001/`.
 - Student lab files are served by MkDocs:
   - `workshop/lab-files/collector-observability-snippet.yaml`
+  - `workshop/lab-files/student-collector-values-gpu-nim-reference.yaml`
 - YAML validation passes for the collector snippet and student collector values files.
 
 Live cluster baseline is ready for `student-01` through `student-20`:
@@ -30,6 +31,7 @@ The lab is student-ready only when all gates pass.
 | Student docs walkthrough | Passing | `.venv/bin/python scripts/student_mkdocs_walkthrough.py --base-url http://127.0.0.1:8001/` |
 | Student namespaces exist | Passing | `kubectl get ns student-01 ... student-20` |
 | Splunk token Secret exists per namespace | Passing | `for ns in $(seq -f 'student-%02g' 1 20); do kubectl get secret splunk-observability-token -n "$ns"; done` |
+| Student service port-forward RBAC | Passing | `for ns in $(seq -f 'student-%02g' 1 20); do kubectl auth can-i create pods/portforward --as=system:serviceaccount:workshop-access:workshop-students -n "$ns"; done` |
 | Student namespaces start clean | Passing | no student namespace has residual `shopmate-ai`, `student-collector`, jobs, ingresses, or PVCs |
 | Student collector deploys | Validate during smoke test | `helm list` and `kubectl rollout status deploy/student-collector` in one test namespace |
 | ShopMate app deploys | Validate during smoke test | `kubectl rollout status deploy/shopmate-ai` in one test namespace |
@@ -77,6 +79,15 @@ Run this sequence before opening the room or publishing the lab URL.
 
    for ns in $(seq -f 'student-%02g' 1 20); do
      kubectl get secret splunk-observability-token -n "$ns"
+     kubectl auth can-i create pods/portforward \
+       --as=system:serviceaccount:workshop-access:workshop-students \
+       -n "$ns"
+     kubectl auth can-i get endpoints \
+       --as=system:serviceaccount:workshop-access:workshop-students \
+       -n "$ns"
+     kubectl auth can-i list endpointslices.discovery.k8s.io \
+       --as=system:serviceaccount:workshop-access:workshop-students \
+       -n "$ns"
    done
 
    kubectl get deploy,svc,pod,job,ingress,pvc -A --ignore-not-found | rg '^student-' || true
@@ -201,4 +212,5 @@ Run these before publishing or handing the URL to students:
 .venv/bin/mkdocs build --strict
 .venv/bin/python scripts/student_mkdocs_walkthrough.py --base-url http://127.0.0.1:8001/
 ruby -e 'require "yaml"; YAML.load_file("workshop/lab-files/collector-observability-snippet.yaml"); puts "YAML ok"'
+ruby -e 'require "yaml"; YAML.load_file("workshop/lab-files/student-collector-values-gpu-nim-reference.yaml"); puts "YAML ok"'
 ```

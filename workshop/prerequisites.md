@@ -88,6 +88,7 @@ Download these files from the lab guide before starting the modules:
 | [student-kubeconfig.yaml](lab-files/student-kubeconfig.yaml) | Kubernetes access to the workshop cluster |
 | [shopmate-ai.yaml](lab-files/shopmate-ai.yaml) | Kubernetes manifest for the ShopMate Sports app |
 | [collector-observability-snippet.yaml](lab-files/collector-observability-snippet.yaml) | Reference sections for the Module 3 GPU/NIM collector-file change |
+| [student-collector-values-gpu-nim-reference.yaml](lab-files/student-collector-values-gpu-nim-reference.yaml) | Complete reference collector values after the Module 3 GPU/NIM collector-file change |
 
 Keep the filenames unchanged when you use the module commands. You will create `student-collector-values.yaml` yourself in Module 1 from the full copy/paste block, using the lab variables you set above.
 
@@ -179,14 +180,14 @@ Quick debug commands:
 
     ```bash
     kubectl get all -n "$STUDENT_NAMESPACE"
-    kubectl get events -n "$STUDENT_NAMESPACE" --sort-by=.lastTimestamp
+    kubectl logs deploy/student-collector -n "$STUDENT_NAMESPACE" --tail=50
     ```
 
 === "Windows PowerShell"
 
     ```powershell
     kubectl get all -n $env:STUDENT_NAMESPACE
-    kubectl get events -n $env:STUDENT_NAMESPACE --sort-by=.lastTimestamp
+    kubectl logs deploy/student-collector -n $env:STUDENT_NAMESPACE --tail=50
     ```
 
 If a command fails, check that your kubeconfig context is correct and that `STUDENT_NAMESPACE` matches your assigned namespace.

@@ -1,17 +1,33 @@
-# Module 3 reference for the GPU/NIM collector-file change.
-# Keep your Module 1 student identity, token, image, RBAC, and service account settings.
-# Add the GPU/NIM target env values, Prometheus receiver, allowlist processor,
-# and a separate GPU/NIM metrics pipeline. Keep the Module 1 OTLP metrics
-# pipeline unfiltered so GenAI app metrics can reach Splunk AI Agent Monitoring.
+# Complete reference values for the student collector after Module 3.
+# Replace the <...> placeholders with your lab handout values before using.
+# This file is intended as a known-good reference for comparison.
+
+fullnameOverride: student-collector
+clusterName: "<LOGICAL_CLUSTER_NAME>"
+
+agent:
+  enabled: false
+
+clusterReceiver:
+  enabled: false
 
 gateway:
+  enabled: true
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 512Mi
   extraEnvs:
     - name: STUDENT_ID
-      value: "<STUDENT-ID>"
+      value: "<STUDENT_ID>"
     - name: STUDENT_NAMESPACE
-      value: "<STUDENT-NAMESPACE>"
+      value: "<STUDENT_NAMESPACE>"
     - name: LOGICAL_CLUSTER_NAME
-      value: "clus-ltrobs-2001-<STUDENT-ID>"
+      value: "<LOGICAL_CLUSTER_NAME>"
     - name: DCGM_SCRAPE_TARGET
       value: nvidia-dcgm-exporter.gpu-operator.svc.cluster.local:9400
     - name: NIM_SCRAPE_TARGET
@@ -42,6 +58,7 @@ gateway:
                 - targets:
                     - ${env:NIM_SCRAPE_TARGET}
     processors:
+      k8s_attributes: null
       resource/environment:
         attributes:
           - key: deployment.environment
@@ -73,3 +90,18 @@ gateway:
           receivers: [prometheus/gpu_nim]
           processors: [memory_limiter, resource/environment, filter/gpu_nim_allowlist, batch]
           exporters: [signalfx]
+
+rbac:
+  create: false
+
+serviceAccount:
+  create: false
+  name: student
+
+secret:
+  create: false
+  name: "<SPLUNK_ACCESS_TOKEN_SECRET>"
+  validateSecret: false
+
+splunkObservability:
+  realm: "<SPLUNK_REALM>"

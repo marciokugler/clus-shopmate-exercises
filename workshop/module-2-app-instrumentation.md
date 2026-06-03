@@ -285,7 +285,6 @@ kubectl get deploy shopmate-ai -n "$STUDENT_NAMESPACE" \
   | sort
 kubectl logs -n "$STUDENT_NAMESPACE" deploy/shopmate-ai --tail=100
 kubectl logs -n "$STUDENT_NAMESPACE" deploy/student-collector --tail=100
-kubectl get events -n "$STUDENT_NAMESPACE" --sort-by=.lastTimestamp
 ```
 
 Confirm these values before searching Splunk again:

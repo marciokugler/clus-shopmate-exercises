@@ -26,3 +26,17 @@ echo
 echo "== Student namespace sample =="
 kubectl get namespace student-01
 kubectl auth can-i create deployments --as=system:serviceaccount:student-01:student -n student-01
+
+echo
+echo "== Shared student kubeconfig access =="
+for ns in $(seq -f 'student-%02g' 1 20); do
+  kubectl auth can-i create pods/portforward \
+    --as=system:serviceaccount:workshop-access:workshop-students \
+    -n "$ns" | grep -qx yes
+  kubectl auth can-i get endpoints \
+    --as=system:serviceaccount:workshop-access:workshop-students \
+    -n "$ns" | grep -qx yes
+  kubectl auth can-i list endpointslices.discovery.k8s.io \
+    --as=system:serviceaccount:workshop-access:workshop-students \
+    -n "$ns" | grep -qx yes
+done

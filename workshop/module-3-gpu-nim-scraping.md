@@ -57,7 +57,7 @@ kubectl delete pod scrape-test nim-test -n "$STUDENT_NAMESPACE" --ignore-not-fou
 Debug if a target fails:
 
 ```bash
-kubectl get events -n "$STUDENT_NAMESPACE" --sort-by=.lastTimestamp
+kubectl get pods -n "$STUDENT_NAMESPACE" -o wide
 kubectl run dns-test -n "$STUDENT_NAMESPACE" --rm -it --restart=Never \
   --image=busybox:1.36 -- nslookup "$(echo "$DCGM_SCRAPE_TARGET" | cut -d: -f1)"
 ```
@@ -85,6 +85,8 @@ Expected result:
 If those entries already exist, you may be holding the completed collector file instead of the Module 1 baseline. Ask the instructor before continuing.
 
 Use [collector-observability-snippet.yaml](lab-files/collector-observability-snippet.yaml) as the reference for the sections you add in the next steps.
+
+If your file gets tangled, compare it with the complete reference values file: [student-collector-values-gpu-nim-reference.yaml](lab-files/student-collector-values-gpu-nim-reference.yaml). The reference file is not personalized; replace the `<STUDENT_ID>`, `<STUDENT_NAMESPACE>`, `<LOGICAL_CLUSTER_NAME>`, `<SPLUNK_ACCESS_TOKEN_SECRET>`, and `<SPLUNK_REALM>` placeholders before using it.
 
 ## Step 3: Add Scrape Target Environment Values
 
@@ -173,7 +175,8 @@ processors:
         metric_names:
           - ^DCGM_FI_DEV_(GPU_UTIL|FB_USED|FB_FREE|GPU_TEMP|POWER_USAGE)$
           - ^DCGM_FI_PROF_(GR_ENGINE_ACTIVE|PIPE_TENSOR_ACTIVE)$
-          - ^(num_requests_running|num_requests_waiting|prompt_tokens_total|generation_tokens_total|request_success_total|request_failure_total|e2e_request_latency_seconds|time_to_first_token_seconds|time_per_output_token_seconds|request_prompt_tokens|request_generation_tokens|http.server.active_requests)$
+          - ^(vllm[:_])?(num_requests_running|num_requests_waiting|prompt_tokens_total|generation_tokens_total|request_success_total|request_failure_total|request_finish_total|e2e_request_latency_seconds|time_to_first_token_seconds|time_per_output_token_seconds|request_prompt_tokens|request_generation_tokens|gpu_cache_usage_perc)$
+          - ^http\.server\.active_requests$
 ```
 
 Reference:
@@ -240,6 +243,8 @@ Expected result:
 - only the `metrics/gpu_nim` pipeline includes `filter/gpu_nim_allowlist`
 - `send_otlp_histograms: true` is present under `exporters.signalfx`
 
+If any of those checks are hard to interpret, download [student-collector-values-gpu-nim-reference.yaml](lab-files/student-collector-values-gpu-nim-reference.yaml) and compare your file against it section by section.
+
 This is the core configuration change for the module. Be ready to explain it before moving on: you added two scrape targets, added one Prometheus receiver, preserved unfiltered app metrics, limited the GPU/NIM metric set, and activated the receiver in its own metrics pipeline.
 
 ## Step 7: Redeploy The Collector Config
@@ -267,7 +272,7 @@ For a failed collector restart, inspect the logs and generated config:
 ```bash
 kubectl logs deploy/student-collector -n "$STUDENT_NAMESPACE" --previous --tail=100
 kubectl describe deploy/student-collector -n "$STUDENT_NAMESPACE"
-kubectl get configmap -n "$STUDENT_NAMESPACE" student-collector -o yaml
+kubectl get configmap -n "$STUDENT_NAMESPACE" student-collector-otel-collector -o yaml
 ```
 
 Reset this step:

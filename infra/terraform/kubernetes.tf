@@ -57,6 +57,24 @@ resource "kubernetes_role_v1" "student" {
   }
 
   rule {
+    api_groups = [""]
+    resources  = ["pods/portforward"]
+    verbs      = ["create"]
+  }
+
+  rule {
+    api_groups = [""]
+    resources  = ["endpoints"]
+    verbs      = ["get", "list", "watch"]
+  }
+
+  rule {
+    api_groups = ["discovery.k8s.io"]
+    resources  = ["endpointslices"]
+    verbs      = ["get", "list", "watch"]
+  }
+
+  rule {
     api_groups = ["apps"]
     resources  = ["deployments", "replicasets"]
     verbs      = ["get", "list", "watch", "create", "update", "patch", "delete"]

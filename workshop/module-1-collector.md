@@ -66,7 +66,8 @@ Expected result:
 Debug if the command fails:
 
 ```bash
-kubectl get events -n "$STUDENT_NAMESPACE" --sort-by=.lastTimestamp
+kubectl get secret -n "$STUDENT_NAMESPACE"
+kubectl config current-context
 ```
 
 If the Secret is missing, stop and ask the instructor to preload `splunk-observability-token` in your namespace. If collector logs later show `401 "Unauthorized"`, the Kubernetes deployment is running but Splunk rejected the credential. Ask the instructor to validate the preloaded token, organization, and realm. Do not paste tokens into chat, docs, or shell history.
@@ -295,9 +296,8 @@ Look for:
 More inspection:
 
 ```bash
-kubectl describe pod -n "$STUDENT_NAMESPACE" -l app=splunk-otel-collector
+kubectl get deploy,rs,pod,svc,cm -n "$STUDENT_NAMESPACE" -l app=splunk-otel-collector -o wide
 kubectl logs -n "$STUDENT_NAMESPACE" deploy/student-collector --previous --tail=100
-kubectl get events -n "$STUDENT_NAMESPACE" --sort-by=.lastTimestamp
 ```
 
 Common patterns:
