@@ -1,0 +1,17 @@
+:root {
+  --md-primary-fg-color: #0f172a;
+  --md-accent-fg-color: #0891b2;
+}
+
+.md-typeset table:not([class]) {
+  font-size: 0.72rem;
+}
+
+.md-typeset code {
+  font-size: 0.78em;
+}
+
+.md-typeset .admonition,
+.md-typeset details {
+  border-radius: 6px;
+}

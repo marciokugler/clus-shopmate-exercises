@@ -1,6 +1,7 @@
 .venv/
 site/
 site-ticketmate/
+site-instructors/
 .cache/
 __pycache__/
 *.pyc
